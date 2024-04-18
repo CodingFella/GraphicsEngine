@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <assert.h>
 
 void fill_screen(uint32_t *canvas, size_t width, size_t height, u_int32_t color) {
     for (size_t i = 0; i<width*height; ++i) {
@@ -19,8 +20,6 @@ int write_ppm(const uint32_t *canvas, size_t width, size_t height, const char* f
     }
 
     fprintf(f, "P6\n%d %d\n255\n", (int) width, (int) height);
-
-    printf("hpiixel %d\n", canvas[1]);
 
     for (size_t i = 0; i<width*height; ++i) {
         uint32_t current = *(canvas + i);
