@@ -80,6 +80,12 @@ int abs (int x1) {
 // Input: pointer to canvas array, width and height of canvas, initial point (x0, y0), final point (x1, y1), color
 // Output: void
 void draw_line(uint32_t *canvas, int width, int height, int x0, int y0, int x1, int y1, uint32_t color) {
+    if(x0< 0 || y0 < 0 || x0 >= width || y0 >= height) {
+        return;
+    }
+    if(x1< 0 || y1 < 0 || x1 >= width || y1 >= height) {
+        return;
+    }
     int dx =  abs (x1 - x0), sx = x0 < x1 ? 1 : -1;
     int dy = -abs (y1 - y0), sy = y0 < y1 ? 1 : -1;
     int err = dx + dy, e2; /* error value e_xy */
@@ -93,5 +99,35 @@ void draw_line(uint32_t *canvas, int width, int height, int x0, int y0, int x1, 
     }
 
 }
-
 // TODO: AA lines https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm
+
+
+// helper function for draw_circle
+void draw_8_points(uint32_t *canvas, int width, int height, int cx, int cy, int x, int y, uint32_t color) {
+    draw_point(canvas, width, height, cx + x, cy + y, color);
+    draw_point(canvas, width, height, cx + x, cy - y, color);
+    draw_point(canvas, width, height, cx - x, cy + y, color);
+    draw_point(canvas, width, height, cx - x, cy - y, color);
+    draw_point(canvas, width, height, cx + y, cy + x, color);
+    draw_point(canvas, width, height, cx + y, cy - x, color);
+    draw_point(canvas, width, height, cx - y, cy + x, color);
+    draw_point(canvas, width, height, cx - y, cy - x, color);
+}
+
+
+void draw_circle(uint32_t *canvas, int width, int height, int cx, int cy, int r, uint32_t color) {
+    int error = -r;
+    int x = r;
+    int y = 0;
+
+    while (y <= x) {
+        draw_8_points(canvas, width, height, cx, cy, x, y, color);
+        error += (y << 1) + 1;
+        ++y;
+        if(error >= 0) {
+            error -= (x << 1) - 1;
+            x -= 1;
+        }
+    }
+}
+
