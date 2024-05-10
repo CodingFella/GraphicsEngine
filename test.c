@@ -36,9 +36,9 @@ void test_draw_line() {
 
         // Combine the RGB components into a single uint32_t color value
         uint32_t current_color = (r << 16) | (g << 8) | b;
-        draw_line(canvas, WIDTH, HEIGHT, i, 0, WIDTH-i, HEIGHT, GREEN);
+        draw_line(canvas, WIDTH, HEIGHT, i, 0, WIDTH-i, HEIGHT-1, current_color);
     }
-    write_ppm(canvas, WIDTH, HEIGHT, "./tests_out/draw_line_test.ppm");
+    write_ppm(canvas, WIDTH, HEIGHT, "./tests_out/draw_line_test1.ppm");
 
 }
 
@@ -75,7 +75,7 @@ int main(void) {
 
 
 
-    test_draw_circle();
+    test_draw_line();
 
 
     return 0;

@@ -5,4 +5,7 @@ project(GraphicsEngine C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(GraphicsEngine main.c)
+add_executable(GraphicsEngine
+        wasm.c
+        wasm_cube.c
+        mathfuncs.h)
