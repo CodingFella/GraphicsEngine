@@ -5,13 +5,10 @@
 // clang --target=wasm32 --no-standard-libraries -Wl,--export-all -Wl,--no-entry -o wasm_cube.wasm wasm_cube.c
 
 #include "graphi.c"
+#include "math.c"
 
 #define WIDTH 800
 #define HEIGHT 600
-
-#define TERMS 20
-
-#define PI 3.14159265359
 
 #define NUM_PLANES 6
 #define PLANE_POINTS 4
@@ -24,45 +21,7 @@ void *memcpy(void *dest, const void *src, size_t n)
     }
 }
 
-double sin(double x) //sin calculation
-{
-    double sum;
-    double fa;
-    double pow;
-    sum = 0.0;
-    for(int i = 0; i <= TERMS; i++)
-    {
-        fa = 1.0;
-        pow = 1.0;
-        for(int j = 1; j <= 2*i+1; j++)
-        {
-            fa *= j;
-            pow *= x;
-        }
-        sum += ((i%2?-1.0:1.0)/fa)*pow;
-    }
-    return sum;
-}
 
-double cos(double x) //cosine calculation
-{
-    double sum;
-    double fa;
-    double pow;
-    sum = 0.0;
-    for(int i = 0; i <= TERMS; i++)
-    {
-        fa = 1.0;
-        pow = 1.0;
-        for(int j = 1; j <= 2*i; j++)
-        {
-            fa *= j;
-            pow *= x;
-        }
-        sum += ((i%2?-1.0:1.0)/fa)*pow;
-    }
-    return sum;
-}
 
 struct Point_3D {
     float x, y, z;
@@ -106,7 +65,7 @@ void draw_planes(uint32_t *canvas, int width, int height,
     struct plane p[NUM_PLANES] = {p0123, p5140, p4062, p5476, p5173, p7362};
     int i, j, min_idx;
 
-    // One by one move boundary of unsorted subarray
+    // selection sort
     for (i = 0; i < NUM_PLANES-1; i++)
     {
         // Find the minimum element in unsorted array
@@ -119,11 +78,22 @@ void draw_planes(uint32_t *canvas, int width, int height,
         if(min_idx != i)
             swap(&p[min_idx], &p[i]);
     }
+
     // paint accordingly
 
     for(i = 3; i < NUM_PLANES; i++) {
-        fill_triangle(canvas, WIDTH, HEIGHT, p[i].s_pointA.x, p[i].s_pointA.y, p[i].s_pointB.x, p[i].s_pointB.y, p[i].s_pointC.x, p[i].s_pointC.y, p[i].color);
-        fill_triangle(canvas, WIDTH, HEIGHT, p[i].s_pointD.x, p[i].s_pointD.y, p[i].s_pointB.x, p[i].s_pointB.y, p[i].s_pointC.x, p[i].s_pointC.y, p[i].color);
+        fill_triangle(canvas, width, height,
+                      (int)(p[i].s_pointA.x+0.5), (int)(p[i].s_pointA.y+0.5),
+                      (int)(p[i].s_pointB.x+0.5), (int)(p[i].s_pointB.y+0.5),
+                      (int)(p[i].s_pointC.x+0.5), (int)(p[i].s_pointC.y+0.5),
+                      p[i].color);
+
+        fill_triangle(canvas, width, height,
+                      (int)(p[i].s_pointD.x+0.5), (int)(p[i].s_pointD.y+0.5),
+                      (int)(p[i].s_pointB.x+0.5), (int)(p[i].s_pointB.y+0.5),
+                      (int)(p[i].s_pointC.x+0.5), (int)(p[i].s_pointC.y+0.5),
+                      p[i].color);
+
     }
 }
 
@@ -192,10 +162,6 @@ void draw_cube(uint32_t *canvas, int width, int height, struct Point_3D *corners
 
 }
 
-
-struct Point_3D rotate(struct Point_3D point, double mat[][3]) {
-
-}
 float A, B, C;
 
 
@@ -237,14 +203,14 @@ uint32_t* render(int dt, float a, float b, float c) {
     float magnitude = 11;
     float camera_distance = 200;
     struct Point_3D points[8] = {
-            { magnitude, magnitude, camera_distance +magnitude},
-            {-magnitude, magnitude, camera_distance +magnitude},
-            {magnitude, -magnitude, camera_distance +magnitude},
-            {-magnitude, -magnitude, camera_distance +magnitude},
-            { magnitude, magnitude, camera_distance -magnitude},
-            {-magnitude, magnitude, camera_distance -magnitude},
-            { magnitude, -magnitude, camera_distance -magnitude},
-            {-magnitude, -magnitude, camera_distance -magnitude},
+            { magnitude, magnitude, camera_distance + magnitude},
+            {-magnitude, magnitude, camera_distance + magnitude},
+            {magnitude, -magnitude, camera_distance + magnitude},
+            {-magnitude, -magnitude, camera_distance + magnitude},
+            { magnitude, magnitude, camera_distance - magnitude},
+            {-magnitude, magnitude, camera_distance - magnitude},
+            { magnitude, -magnitude, camera_distance - magnitude},
+            {-magnitude, -magnitude, camera_distance - magnitude},
     };
 
     for(int j=0; j<8; j++) {
