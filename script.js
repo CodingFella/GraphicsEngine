@@ -10,12 +10,16 @@ let B = 0.0;
 let C = 0.0;
 
 let dt = 0;
+let mode = 0;
+let dimension= 8;
 
 console.log(dt);
 
 let speed = 0.001;
 
 let spinning = false;
+
+let loc = 0;
 
 startDemo();
 let intervalID;
@@ -27,14 +31,14 @@ function spin(instance, dt) {
         B += speed;
         C += speed;
         // console.log(dt);
-        render(instance, dt, A, B, C);
+        render(instance, dt, A, B, C, dimension, mode, loc);
     }, 25); // Interval set to 1000ms (1 second)
 }
 async function startDemo() {
     const response = await fetch('wasm_2x2_cube.wasm');
     const bytes = await response.arrayBuffer();
     const {instance} = await WebAssembly.instantiate(bytes);
-    render(instance, dt, A, B, C);
+    render(instance, dt, A, B, C, dimension, mode, loc);
 
 
 
@@ -68,12 +72,22 @@ async function startDemo() {
         else if (event.key === 'o') {
             speed /= 2;
         }
-        render(instance, dt, A, B, C);
+
+        else if (event.key === ',') {
+            if(loc < dimension-1) loc += 1;
+        }
+        else if (event.key === '.') {
+            if(loc > 0) loc -= 1;
+        }
+        else if (event.key === 'm') {
+            mode = (mode + 1) % 3;
+        }
+        render(instance, dt, A, B, C, dimension, mode, loc);
     });
 }
 
-function render(instance, dt, A, B, C) {
-    const pixels = instance.exports.render(dt, A, B, C);
+function render(instance, dt, A, B, C, dimension, mode, loc) {
+    const pixels = instance.exports.render(dt, A, B, C, dimension, mode, loc);
     const buffer = instance.exports.memory.buffer;
     const imageData = new ImageData(new Uint8ClampedArray(buffer, pixels, app.width * app.height * 4), app.width);
     ctx.putImageData(imageData, 0, 0);

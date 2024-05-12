@@ -14,6 +14,7 @@
 #define LILAC 0xFFE6D7FF
 #define YELLOW 0xFF00FFFF
 #define ORANGE 0xFF00A5FF
+#define HOTPINK 0xFFB469FF
 
 
 #define GRAPHIC_SWAP(T, a, b) do { T t = a; a = b; b = t; } while(0)
@@ -80,6 +81,8 @@ int abs (int x1) {
     return x1;
 }
 
+
+
 // draws line
 // Input: pointer to canvas array, width and height of canvas, initial point (x0, y0), final point (x1, y1), color
 // Output: void
@@ -104,8 +107,17 @@ void draw_line(uint32_t *canvas, size_t width, size_t height, int x0, int y0, in
     }
 
 }
+
+
 // TODO: AA lines https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm
 
+
+void draw_thick_line(uint32_t *canvas, size_t width, size_t height, int x0, int y0, int x1, int y1, int thickness, uint32_t color) {
+
+    for(int i=-thickness/2; i<thickness/2; i++) {
+        draw_line(canvas, width, height, x0, y0, x1, y1, color);
+    }
+}
 
 // helper function for draw_circle
 void draw_8_points(uint32_t *canvas, int width, int height, int cx, int cy, int x, int y, uint32_t color) {
