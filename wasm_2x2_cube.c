@@ -16,7 +16,7 @@
 
 // 1.2 0.1 is nice
 #define SCALE 1.2
-#define GAP 0.1
+#define GAP 0.5
 
 #define BG_COLOR BLACK
 
@@ -42,10 +42,11 @@
 
 #define TESTPLANE 0b01000000
 
-int DIMENSION = 8;
+int DIMENSION = 2;
 
 float A, B, C;
-static uint32_t pixels[WIDTH*HEIGHT + MAX_CUBES];
+static uint32_t pixels[WIDTH*HEIGHT];
+//static uint32_t currState[MAX_CUBES];
 
 
 struct Point_3D {
@@ -72,7 +73,7 @@ struct plane {
 
 struct cube {
     struct Point_3D points[NUM_CORNERS];
-    uint8_t planesToDraw;
+    uint32_t currState;
 };
 
 float get_average_z(struct plane input) {
@@ -183,32 +184,33 @@ void convert_3D_to_2D(struct Point_2D* point2D, int width, int height, struct Po
  *          drawn into the canvas.
  */
 void draw_cube(uint32_t *canvas, int width, int height, struct Point_3D* points,
-        struct Point_3D camera, uint32_t* colors, int planesToConsider) {
+        struct Point_3D camera, uint32_t* colors, uint32_t curr_color, int curr_cube) {
     struct Point_2D c_2D[NUM_CORNERS];
 
     convert_3D_to_2D(c_2D, width, height, points, camera);
 
-    struct plane p0123 = {points[0], points[1], points[2], points[3], c_2D[0], c_2D[1], c_2D[2], c_2D[3], colors[0]};
-    struct plane p5140 = {points[5], points[1], points[4], points[0], c_2D[5], c_2D[1], c_2D[4], c_2D[0],
-                          colors[1]};
-    struct plane p4062 = {points[4], points[0], points[6], points[2], c_2D[4], c_2D[0], c_2D[6], c_2D[2], colors[2]};
+    // todo: replace last thing with BG_COLOR
+    struct plane p0123 = {points[0], points[1], points[2], points[3],
+            c_2D[0], c_2D[1], c_2D[2], c_2D[3], BG_COLOR};
+    struct plane p5140 = {points[5], points[1], points[4], points[0],
+            c_2D[5], c_2D[1], c_2D[4], c_2D[0], BG_COLOR};
+    struct plane p4062 = {points[4], points[0], points[6], points[2], c_2D[4], c_2D[0], c_2D[6], c_2D[2],
+                          BG_COLOR};
     struct plane p5476 = {points[5], points[4], points[7], points[6], c_2D[5], c_2D[4], c_2D[7], c_2D[6],
-                          colors[3]};
+                          BG_COLOR};
     struct plane p5173 = {points[5], points[1], points[7], points[3], c_2D[5], c_2D[1], c_2D[7], c_2D[3],
-                          colors[4]};
+                          BG_COLOR};
     struct plane p7362 = {points[7], points[3], points[6], points[2], c_2D[7], c_2D[3], c_2D[6], c_2D[2],
-                          colors[5]};
+                          BG_COLOR};
 
     struct plane planes[NUM_PLANES] = {p0123, p5140, p4062, p5476, p5173, p7362};
-    int curr_plane = PLANE0;
-    for (int i = 0; i < NUM_PLANES; i++) {
-        if ((planesToConsider & curr_plane) != 0) {
-            planes[i].color = BG_COLOR;
+
+    for (int i = 0; i < 3; i++) {
+        uint32_t color_id = ((curr_color << (32-6*(i+1) + 3)) >> 29);
+        uint32_t plane_id = ((curr_color << (32-6*(i+1)) >> 29));
+        if(plane_id != 7 && color_id != 7) {
+            planes[plane_id].color = colors[color_id];
         }
-//        if((planesToConsider & TESTPLANE)) {
-//            planes[i].color = LILAC;
-//        }
-        curr_plane = curr_plane >> 1;
     }
 
     draw_planes(canvas, WIDTH, HEIGHT, planes, NUM_PLANES);
@@ -315,7 +317,7 @@ void copy_cube(struct cube *dest, struct cube *src) {
     for(int i=0; i<NUM_CORNERS; i++) {
         dest->points[i] = src->points[i];
     }
-    dest->planesToDraw = src->planesToDraw;
+    dest->currState = src->currState;
 }
 
 void copy_3D_point(struct Point_3D *dest, struct Point_3D *src) {
@@ -324,6 +326,20 @@ void copy_3D_point(struct Point_3D *dest, struct Point_3D *src) {
     dest->z = src->z;
 }
 
+void load_default(uint32_t *curr_cube, int planeOfInterest, int plane_count) {
+    // clear out portion
+    uint32_t mask = (1 << 6) - 1;
+    mask = mask << plane_count * 6;
+    mask = ~mask;
+
+    *curr_cube = *curr_cube & mask;
+
+    uint32_t plane_id = (planeOfInterest) << (6*plane_count+3);
+    uint32_t color_id = (planeOfInterest) << (6*plane_count);
+
+    *curr_cube += plane_id;
+    *curr_cube += color_id;
+}
 
 
 /*
@@ -345,20 +361,20 @@ void copy_3D_point(struct Point_3D *dest, struct Point_3D *src) {
  *      No return value. Computed cubes are stored in cubes and the proper image is
  *          drawn into the canvas.
  */
-void generateCubes(struct cube *cubes, int num_cubes, float magnitude, float camera_distance, uint32_t *colors) {
+struct cube *generateCubes(struct cube *cubes, struct cube *translatedCubes, int num_cubes, float magnitude, float camera_distance, uint32_t *colors) {
     int i, j, k;
 
     const int cubes_rows = DIMENSION;
     int cubes_cols = DIMENSION;
     int cubes_height = DIMENSION;
 
-    struct cube translatedCubes[num_cubes];
+
 
     for(i=0; i<num_cubes; i++) {
         for(j=0; j<NUM_CORNERS; j++) {
             translatedCubes[i].points[j] = cubes[i].points[j];
         }
-        translatedCubes[i].planesToDraw = 0;
+        translatedCubes[i].currState = cubes[i].currState;
     }
 
     float spacing = (float)(SCALE*2);
@@ -367,6 +383,10 @@ void generateCubes(struct cube *cubes, int num_cubes, float magnitude, float cam
     float y_offset = -spacing*((DIMENSION-1)/(float)2);
     float z_offset = -spacing*((DIMENSION-1)/(float)2);
     int count = 0;
+    int planeOfInterest = 0;
+
+    int d_length = 2*2*2; // 3 bit representation
+
 
     // stickers!
     for(i=0; i<cubes_rows; i++) {
@@ -377,19 +397,6 @@ void generateCubes(struct cube *cubes, int num_cubes, float magnitude, float cam
                     k == 0 || k == cubes_height - 1) {
                     generateCorners(&translatedCubes[count], magnitude, camera_distance, x_offset + (spacing * (float) i),
                                     y_offset + (spacing * (float) j), z_offset + (spacing * (float) k));
-
-                    // assigns each cube with which planes are active
-                    if(i == 0) translatedCubes[count].planesToDraw += PLANE4;
-                    if(i == DIMENSION - 1) translatedCubes[count].planesToDraw += PLANE2;
-
-
-                    if(j == 0) translatedCubes[count].planesToDraw += PLANE5;
-                    if(j == DIMENSION - 1) translatedCubes[count].planesToDraw += PLANE1;
-
-                    if(k == 0) translatedCubes[count].planesToDraw += PLANE3;
-                    if(k == DIMENSION - 1) translatedCubes[count].planesToDraw += PLANE0;
-
-                    //if(i==0 && j==1 && k==0) cubes[count].planesToDraw += TESTPLANE;
 
                     count++;
                 }
@@ -426,7 +433,7 @@ void generateCubes(struct cube *cubes, int num_cubes, float magnitude, float cam
 
         // Swap the found minimum element with the first element
         struct Point_3D temp;
-        uint8_t temp_num;
+        uint32_t temp_state;
         if(min_idx != i) {
             for(j=0; j < NUM_CORNERS; j++) {
                 temp = translatedCubes[min_idx].points[j];
@@ -434,16 +441,19 @@ void generateCubes(struct cube *cubes, int num_cubes, float magnitude, float cam
                 translatedCubes[i].points[j] = temp;
             }
 
-            temp_num = translatedCubes[min_idx].planesToDraw;
-            translatedCubes[min_idx].planesToDraw = translatedCubes[i].planesToDraw;
-            translatedCubes[i].planesToDraw = temp_num;
+            temp_state = translatedCubes[min_idx].currState;
+            translatedCubes[min_idx].currState = translatedCubes[i].currState;
+            translatedCubes[i].currState = temp_state;
 
+//            temp_state = currState[min_idx];
+//            currState[min_idx] = currState[i];
+//            currState[i] = temp_state;
         }
     }
 
-    for(i=0; i<num_cubes; i++) {
-        draw_cube(pixels, WIDTH, HEIGHT, translatedCubes[i].points, camera, colors, ~translatedCubes[i].planesToDraw);
-    }
+    return translatedCubes;
+
+
 }
 
 void draw_guide_lines(struct Point_2D *translatedPoints) {
@@ -773,6 +783,138 @@ void generateIndicator(struct cube* cubes, int mode, int location, float camera_
 
 }
 
+void swap_plane(uint32_t *state, int initial, int updated) {
+    for (int i = 0; i < 3; i++) {
+        uint32_t plane_id = ((*state << (32-6*(i+1)) >> 29));
+        if(plane_id == initial) {
+            uint32_t mask = (1 << 3) - 1;
+            mask = mask << (i * 6 + 3);
+            mask = ~mask;
+
+            *state = *state & mask;
+
+            *state += updated << (i * 6 + 3);
+        }
+    }
+}
+
+void rotate_mode_length_i(struct cube *cubes, int location) {
+    // if location == 0 || location == DIMENSION - 1 need to rotate sides
+
+    // return;
+
+    int cubes_per_layer = DIMENSION * 4 - 4;
+    int starting_block = (location-1) * cubes_per_layer + DIMENSION * DIMENSION + DIMENSION - 2;
+
+    int first_increment = 2;
+    int second_increment = 2 * (DIMENSION - 3) + 3;
+    int first_decrement = -first_increment;
+
+    // swap one-faced blocks
+    uint32_t temp;
+    for(int i=starting_block; i > starting_block - DIMENSION + 2; i--) {
+        int curr_block = i;
+        temp = cubes[curr_block].currState;
+
+        int next_block = curr_block + first_increment;
+        cubes[curr_block].currState = cubes[next_block].currState;
+
+        swap_plane(&cubes[curr_block].currState, 5, 3);
+
+        curr_block = next_block;
+        next_block = curr_block + second_increment;
+        cubes[curr_block].currState = cubes[next_block].currState;
+
+        swap_plane(&cubes[curr_block].currState, 3, 1);
+
+        curr_block = next_block;
+        next_block = curr_block + first_decrement;
+        cubes[curr_block].currState = cubes[next_block].currState;
+
+        swap_plane(&cubes[curr_block].currState, 1, 0);
+
+        curr_block = next_block;
+        cubes[curr_block].currState = temp;
+
+        swap_plane(&cubes[next_block].currState, 0, 5);
+
+        first_increment += 3;
+        second_increment -= 1;
+        first_decrement = -first_increment;
+    }
+
+
+
+}
+
+void resetFaces(struct cube* cubes, int num_cubes) {
+
+    int i, j, k;
+    for(i=0; i<num_cubes; i++) {
+        cubes[i].currState = 0xFFFFFFFF;
+    }
+
+    int planeOfInterest;
+    int count = 0;
+    for(i=0; i<DIMENSION; i++) {
+        for(j=0; j<DIMENSION; j++) {
+            for(k=0; k<DIMENSION; k++) {
+                if(i == 0 || i == DIMENSION - 1 ||
+                   j == 0 || j == DIMENSION - 1 ||
+                   k == 0 || k == DIMENSION - 1) {
+                    int planeCount = 0;
+                    if(i == 0) {
+//                        planeOfInterest = 4;
+                        planeOfInterest = 4;
+
+                        load_default(&cubes[count].currState, planeOfInterest, planeCount);
+                        planeCount++;
+                    }
+
+                    if(i == DIMENSION - 1) {
+//                        planeOfInterest = 2;
+                        planeOfInterest = 2;
+
+                        load_default(&cubes[count].currState, planeOfInterest, planeCount);
+                        planeCount++;
+                    }
+
+
+                    if(j == 0) {
+//                        planeOfInterest = 5;
+                        planeOfInterest = 5;
+
+                        load_default(&cubes[count].currState, planeOfInterest, planeCount);
+                        planeCount++;
+                    }
+                    if(j == DIMENSION - 1) {
+//                        planeOfInterest = 1;
+                        planeOfInterest = 1;
+
+                        load_default(&cubes[count].currState, planeOfInterest, planeCount);
+                        planeCount++;
+                    }
+
+                    if(k == 0) {
+//                        planeOfInterest = 3;
+                        planeOfInterest = 3;
+
+                        load_default(&cubes[count].currState, planeOfInterest, planeCount);
+                        planeCount++;
+                    }
+
+                    if(k == DIMENSION - 1) {
+//                        planeOfInterest = 0;
+                        planeOfInterest = 0;
+                        load_default(&cubes[count].currState, planeOfInterest, planeCount);
+                        planeCount++;
+                    }
+                    count++;
+                }
+            }
+        }
+    }
+}
 
 /*
  *  Function:    render
@@ -790,7 +932,13 @@ void generateIndicator(struct cube* cubes, int mode, int location, float camera_
  *      uint32_t *pixels: a 2D array containing the pixels to be drawn
  *          onto the screen.
  */
-uint32_t* render(int dt, float a, float b, float c, int dimension, int mode, int location) {
+uint32_t* render(int dt, float a, float b, float c, int dimension, int mode, int location, int toRotate) {
+
+    DIMENSION = dimension;
+    int num_cubes = (DIMENSION == 1) ? 1 : DIMENSION * DIMENSION * DIMENSION - (DIMENSION-2) * (DIMENSION-2) * (DIMENSION-2);
+    struct cube cubes[num_cubes];
+    struct cube translatedCubes[num_cubes];
+       // resetFaces(cubes, num_cubes);
     DIMENSION = dimension;
 
     dt = dt % 360;
@@ -808,14 +956,15 @@ uint32_t* render(int dt, float a, float b, float c, int dimension, int mode, int
     float magnitude = SCALE - GAP;
     float camera_distance = 200;
 
-    int num_cubes = (DIMENSION == 1) ? 1 : DIMENSION * DIMENSION * DIMENSION - (DIMENSION-2) * (DIMENSION-2) * (DIMENSION-2);
-    struct cube cubes[num_cubes];
-
     struct Point_3D camera = {0, 0, 0};
 
     uint32_t colors[NUM_PLANES] = {BLUE, YELLOW, RED, GREEN, ORANGE, WHITE};
 
-    generateCubes(cubes, num_cubes, magnitude, camera_distance, colors);
+    generateCubes(cubes, translatedCubes, num_cubes, magnitude, camera_distance, colors);
+
+    for(int i=0; i<num_cubes; i++) {
+        draw_cube(pixels, WIDTH, HEIGHT, translatedCubes[i].points, camera, colors, translatedCubes[i].currState, i);
+    }
 
     generateIndicator(cubes, mode, location, camera_distance, camera);
 
@@ -835,19 +984,30 @@ void *memcpy(void *dest, const void *src, size_t n)
 
 int main(void)
 {
-    float magnitude = SCALE - GAP;
-    float camera_distance = 200;
-
     int num_cubes = (DIMENSION == 1) ? 1 : DIMENSION * DIMENSION * DIMENSION - (DIMENSION-2) * (DIMENSION-2) * (DIMENSION-2);
     struct cube cubes[num_cubes];
+    struct cube translatedCubes[num_cubes];
+    //if(dt == 0) {
+    resetFaces(cubes, num_cubes);
+    //}
+
+    f_modulo(&A, 2*(float)PI);
+    f_modulo(&B, 2*(float)PI);
+    f_modulo(&C, 2*(float)PI);
+
+    float magnitude = SCALE - GAP;
+    float camera_distance = 200;
 
     struct Point_3D camera = {0, 0, 0};
 
     uint32_t colors[NUM_PLANES] = {BLUE, YELLOW, RED, GREEN, ORANGE, WHITE};
 
-    generateCubes(cubes, num_cubes, magnitude, camera_distance, colors);
+    generateCubes(cubes, translatedCubes, num_cubes, magnitude, camera_distance, colors);
 
-    generateIndicator(cubes, MODE_LENGTH_I, 3, camera_distance, camera);
+    for(int i=0; i<num_cubes; i++) {
+        draw_cube(pixels, WIDTH, HEIGHT, translatedCubes[i].points, camera, colors, translatedCubes[i].currState, i);
+    }
+
 
     return 0;
 }

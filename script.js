@@ -11,7 +11,7 @@ let C = 0.0;
 
 let dt = 0;
 let mode = 0;
-let dimension= 8;
+let dimension= 4;
 
 console.log(dt);
 
@@ -20,6 +20,9 @@ let speed = 0.001;
 let spinning = false;
 
 let loc = 0;
+
+const MAX_DIMENSION = 10;
+const MAX_CUBES = (MAX_DIMENSION * MAX_DIMENSION * MAX_DIMENSION - (MAX_DIMENSION-2) * (MAX_DIMENSION-2) * (MAX_DIMENSION-2));
 
 startDemo();
 let intervalID;
@@ -35,9 +38,10 @@ function spin(instance, dt) {
     }, 25); // Interval set to 1000ms (1 second)
 }
 async function startDemo() {
-    const response = await fetch('wasm_2x2_cube.wasm');
+    const response = await fetch('abcd.wasm');
     const bytes = await response.arrayBuffer();
     const {instance} = await WebAssembly.instantiate(bytes);
+    instance.exports.resetFaces(dt);
     render(instance, dt, A, B, C, dimension, mode, loc);
 
 
@@ -46,6 +50,7 @@ async function startDemo() {
         console.log("pA");
         if (event.key === 'w') {
             A += 0.1;
+            dt++;
         } else if (event.key === 's') {
             A -= 0.1;
         } else if (event.key === 'd') {
@@ -81,6 +86,10 @@ async function startDemo() {
         }
         else if (event.key === 'm') {
             mode = (mode + 1) % 3;
+        }
+        else if (event.key === 'r') {
+            console.log("rotate");
+            instance.exports.rotate_mode_length_i(1);
         }
         render(instance, dt, A, B, C, dimension, mode, loc);
     });
