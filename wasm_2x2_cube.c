@@ -30,17 +30,7 @@
 #define FLT_MIN (-FLT_MAX) /* min positive value */
 
 // order goes as this: p0123, p5140, p4062, p5476, p5173, p7362
-#define PLANE0 0b00100000
-#define PLANE1 0b00010000
-#define PLANE2 0b00001000
-#define PLANE3 0b00000100
-#define PLANE4 0b00000010
-#define PLANE5 0b00000001
 
-#define MAX_DIMENSION 10
-#define MAX_CUBES (MAX_DIMENSION * MAX_DIMENSION * MAX_DIMENSION - (MAX_DIMENSION-2) * (MAX_DIMENSION-2) * (MAX_DIMENSION-2))
-
-#define TESTPLANE 0b01000000
 
 int DIMENSION = 2;
 
@@ -184,7 +174,7 @@ void convert_3D_to_2D(struct Point_2D* point2D, int width, int height, struct Po
  *          drawn into the canvas.
  */
 void draw_cube(uint32_t *canvas, int width, int height, struct Point_3D* points,
-        struct Point_3D camera, uint32_t* colors, uint32_t curr_color, int curr_cube) {
+        struct Point_3D camera, uint32_t* colors, uint32_t curr_color) {
     struct Point_2D c_2D[NUM_CORNERS];
 
     convert_3D_to_2D(c_2D, width, height, points, camera);
@@ -317,7 +307,7 @@ void copy_cube(struct cube *dest, struct cube *src) {
     for(int i=0; i<NUM_CORNERS; i++) {
         dest->points[i] = src->points[i];
     }
-    dest->currState = src->currState;
+    //dest->currState = src->currState;
 }
 
 void copy_3D_point(struct Point_3D *dest, struct Point_3D *src) {
@@ -383,9 +373,6 @@ struct cube *generateCubes(struct cube *cubes, struct cube *translatedCubes, int
     float y_offset = -spacing*((DIMENSION-1)/(float)2);
     float z_offset = -spacing*((DIMENSION-1)/(float)2);
     int count = 0;
-    int planeOfInterest = 0;
-
-    int d_length = 2*2*2; // 3 bit representation
 
 
     // stickers!
@@ -417,8 +404,6 @@ struct cube *generateCubes(struct cube *cubes, struct cube *translatedCubes, int
             translatedCubes[i].points[j] = new_point;
         }
     }
-
-    struct Point_3D camera = {0, 0, 0};
 
     // draw the cubes!
     // selection sort
@@ -798,8 +783,86 @@ void swap_plane(uint32_t *state, int initial, int updated) {
     }
 }
 
+//int order_of_planes[4] = {3, 1, 0, 5};
+
+void rotate_middle_plane(struct cube* cubes, int starting_block,
+        int first_increment, int second_increment,
+        int first_decrement, int* order_of_planes) {
+    // swap one-faced blocks
+    uint32_t temp;
+    for(int i=starting_block; i > starting_block - DIMENSION + 2; i--) {
+        int curr_block = i;
+        temp = cubes[curr_block].currState;
+
+        int next_block = curr_block + first_increment;
+
+        cubes[curr_block].currState = cubes[next_block].currState;
+
+        swap_plane(&cubes[curr_block].currState, order_of_planes[0], order_of_planes[3]);
+
+        curr_block = next_block;
+        next_block = curr_block + second_increment;
+        cubes[curr_block].currState = cubes[next_block].currState;
+
+        swap_plane(&cubes[curr_block].currState, order_of_planes[1], order_of_planes[0]);
+
+        curr_block = next_block;
+        next_block = curr_block + first_decrement;
+        cubes[curr_block].currState = cubes[next_block].currState;
+
+        swap_plane(&cubes[curr_block].currState, order_of_planes[2], order_of_planes[1]);
+
+        curr_block = next_block;
+        cubes[curr_block].currState = temp;
+
+        swap_plane(&cubes[next_block].currState, order_of_planes[3], order_of_planes[2]);
+
+        first_increment += 3;
+        second_increment -= 1;
+        first_decrement = -first_increment;
+    }
+
+    // swap edge blocks
+    int curr_block = starting_block - DIMENSION + 2;
+
+    temp = cubes[curr_block].currState;
+
+    int next_block = curr_block + first_increment;
+
+    cubes[curr_block].currState = cubes[next_block].currState;
+
+    swap_plane(&cubes[curr_block].currState, order_of_planes[0], order_of_planes[3]);
+    swap_plane(&cubes[curr_block].currState, order_of_planes[1], order_of_planes[0]);
+
+
+    curr_block = next_block;
+    next_block = curr_block + second_increment;
+    cubes[curr_block].currState = cubes[next_block].currState;
+
+    swap_plane(&cubes[curr_block].currState, order_of_planes[1], order_of_planes[0]);
+    swap_plane(&cubes[curr_block].currState, order_of_planes[2], order_of_planes[1]);
+
+    curr_block = next_block;
+    next_block = curr_block + first_decrement;
+    cubes[curr_block].currState = cubes[next_block].currState;
+
+    swap_plane(&cubes[curr_block].currState, order_of_planes[2], order_of_planes[1]);
+    swap_plane(&cubes[curr_block].currState, order_of_planes[3], order_of_planes[2]);
+
+
+    curr_block = next_block;
+    cubes[curr_block].currState = temp;
+
+    swap_plane(&cubes[next_block].currState, order_of_planes[3], order_of_planes[2]);
+    swap_plane(&cubes[next_block].currState, order_of_planes[0], order_of_planes[3]);
+}
+
 void rotate_mode_length_i(struct cube *cubes, int location) {
     // if location == 0 || location == DIMENSION - 1 need to rotate sides
+
+//    if(location == 0) {
+//
+//    }
 
     // return;
 
@@ -810,38 +873,11 @@ void rotate_mode_length_i(struct cube *cubes, int location) {
     int second_increment = 2 * (DIMENSION - 3) + 3;
     int first_decrement = -first_increment;
 
-    // swap one-faced blocks
-    uint32_t temp;
-    for(int i=starting_block; i > starting_block - DIMENSION + 2; i--) {
-        int curr_block = i;
-        temp = cubes[curr_block].currState;
+    int order_of_planes[5] = {3, 1, 0, 5};
+    rotate_middle_plane(cubes, starting_block, first_increment, second_increment, first_decrement, order_of_planes);
 
-        int next_block = curr_block + first_increment;
-        cubes[curr_block].currState = cubes[next_block].currState;
 
-        swap_plane(&cubes[curr_block].currState, 5, 3);
 
-        curr_block = next_block;
-        next_block = curr_block + second_increment;
-        cubes[curr_block].currState = cubes[next_block].currState;
-
-        swap_plane(&cubes[curr_block].currState, 3, 1);
-
-        curr_block = next_block;
-        next_block = curr_block + first_decrement;
-        cubes[curr_block].currState = cubes[next_block].currState;
-
-        swap_plane(&cubes[curr_block].currState, 1, 0);
-
-        curr_block = next_block;
-        cubes[curr_block].currState = temp;
-
-        swap_plane(&cubes[next_block].currState, 0, 5);
-
-        first_increment += 3;
-        second_increment -= 1;
-        first_decrement = -first_increment;
-    }
 
 
 
@@ -907,7 +943,6 @@ void resetFaces(struct cube* cubes, int num_cubes) {
 //                        planeOfInterest = 0;
                         planeOfInterest = 0;
                         load_default(&cubes[count].currState, planeOfInterest, planeCount);
-                        planeCount++;
                     }
                     count++;
                 }
@@ -933,15 +968,20 @@ void resetFaces(struct cube* cubes, int num_cubes) {
  *          onto the screen.
  */
 uint32_t* render(int dt, float a, float b, float c, int dimension, int mode, int location, int toRotate) {
-
+    int refresh = 0;
+    if(dimension != DIMENSION) {
+        refresh = 1;
+    }
     DIMENSION = dimension;
     int num_cubes = (DIMENSION == 1) ? 1 : DIMENSION * DIMENSION * DIMENSION - (DIMENSION-2) * (DIMENSION-2) * (DIMENSION-2);
     struct cube cubes[num_cubes];
     struct cube translatedCubes[num_cubes];
-       // resetFaces(cubes, num_cubes);
-    DIMENSION = dimension;
-
-    dt = dt % 360;
+    if(refresh) {
+       resetFaces(cubes, num_cubes);
+    }
+    if(toRotate) {
+        rotate_mode_length_i(cubes, location);
+    }
 
     fill_screen(pixels, WIDTH, HEIGHT, BG_COLOR);
 
@@ -963,7 +1003,7 @@ uint32_t* render(int dt, float a, float b, float c, int dimension, int mode, int
     generateCubes(cubes, translatedCubes, num_cubes, magnitude, camera_distance, colors);
 
     for(int i=0; i<num_cubes; i++) {
-        draw_cube(pixels, WIDTH, HEIGHT, translatedCubes[i].points, camera, colors, translatedCubes[i].currState, i);
+        draw_cube(pixels, WIDTH, HEIGHT, translatedCubes[i].points, camera, colors, translatedCubes[i].currState);
     }
 
     generateIndicator(cubes, mode, location, camera_distance, camera);
@@ -1005,8 +1045,10 @@ int main(void)
     generateCubes(cubes, translatedCubes, num_cubes, magnitude, camera_distance, colors);
 
     for(int i=0; i<num_cubes; i++) {
-        draw_cube(pixels, WIDTH, HEIGHT, translatedCubes[i].points, camera, colors, translatedCubes[i].currState, i);
+        draw_cube(pixels, WIDTH, HEIGHT, translatedCubes[i].points, camera, colors, translatedCubes[i].currState);
     }
+
+    rotate_mode_length_i(cubes, 7);
 
 
     return 0;

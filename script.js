@@ -13,6 +13,8 @@ let dt = 0;
 let mode = 0;
 let dimension= 4;
 
+let toRotate= 0;
+
 console.log(dt);
 
 let speed = 0.001;
@@ -41,7 +43,7 @@ async function startDemo() {
     const response = await fetch('abcd.wasm');
     const bytes = await response.arrayBuffer();
     const {instance} = await WebAssembly.instantiate(bytes);
-    instance.exports.resetFaces(dt);
+    // instance.exports.resetFaces(1);
     render(instance, dt, A, B, C, dimension, mode, loc);
 
 
@@ -89,14 +91,18 @@ async function startDemo() {
         }
         else if (event.key === 'r') {
             console.log("rotate");
+            console.log(dt);
+
             instance.exports.rotate_mode_length_i(1);
+            toRotate = 1;
         }
-        render(instance, dt, A, B, C, dimension, mode, loc);
+        render(instance, dt, A, B, C, dimension, mode, loc, toRotate);
+        toRotate = 0;
     });
 }
 
-function render(instance, dt, A, B, C, dimension, mode, loc) {
-    const pixels = instance.exports.render(dt, A, B, C, dimension, mode, loc);
+function render(instance, dt, A, B, C, dimension, mode, loc, toRotate) {
+    const pixels = instance.exports.render(dt, A, B, C, dimension, mode, loc, toRotate);
     const buffer = instance.exports.memory.buffer;
     const imageData = new ImageData(new Uint8ClampedArray(buffer, pixels, app.width * app.height * 4), app.width);
     ctx.putImageData(imageData, 0, 0);
