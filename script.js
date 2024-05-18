@@ -11,7 +11,7 @@ let C = 0.0;
 
 let dt = 0;
 let mode = 0;
-let dimension= 4;
+let dimension= 3;
 
 let toRotate= 0;
 
