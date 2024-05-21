@@ -3,6 +3,7 @@
 //
 
 // clang --target=wasm32 --no-standard-libraries -Wl,--export-all -Wl,--no-entry -o wasm_cube.wasm wasm_cube.c
+// clang --target=wasm32 --no-standard-libraries -Wl,--export-all -Wl,--no-entry -o abcd.wasm wasm_2x2_cube.c
 
 #include "graphi.c"
 #include "math.c"
@@ -16,7 +17,7 @@
 
 // 1.2 0.1 is nice
 #define SCALE 1.2
-#define GAP 0.5
+#define GAP 0.1
 
 #define BG_COLOR BLACK
 
@@ -776,290 +777,7 @@ void swap_plane(uint32_t *state, int initial, int updated) {
 }
 
 
-// I
-void rotate_side_plane_i(struct cube *cubes, int *order_of_planes, int starting_block,
-                         int first_increment,
-                         int second_increment,
-                         int first_decrement) {
-    // swap one-faced blocks
-    uint32_t temp;
-    for (int i = starting_block; i > starting_block - DIMENSION + 2; i--) {
-        int curr_block = i;
-        temp = cubes[curr_block].currState;
 
-        int next_block = curr_block + first_increment;
-
-        cubes[curr_block].currState = cubes[next_block].currState;
-
-        swap_plane(&cubes[curr_block].currState, order_of_planes[0], order_of_planes[3]);
-
-        curr_block = next_block;
-        next_block = curr_block + second_increment;
-        cubes[curr_block].currState = cubes[next_block].currState;
-
-        swap_plane(&cubes[curr_block].currState, order_of_planes[1], order_of_planes[0]);
-
-        curr_block = next_block;
-        next_block = curr_block + first_decrement;
-        cubes[curr_block].currState = cubes[next_block].currState;
-
-        swap_plane(&cubes[curr_block].currState, order_of_planes[2], order_of_planes[1]);
-
-        curr_block = next_block;
-        cubes[curr_block].currState = temp;
-
-        swap_plane(&cubes[next_block].currState, order_of_planes[3], order_of_planes[2]);
-
-        first_increment += DIMENSION + 1;
-        second_increment += -DIMENSION + 1;
-        first_decrement = -first_increment;
-    }
-
-    // swap edge blocks
-    int curr_block = starting_block - DIMENSION + 2;
-
-    temp = cubes[curr_block].currState;
-
-    int next_block = curr_block + first_increment;
-
-    cubes[curr_block].currState = cubes[next_block].currState;
-
-    swap_plane(&cubes[curr_block].currState, order_of_planes[0], order_of_planes[3]);
-    swap_plane(&cubes[curr_block].currState, order_of_planes[1], order_of_planes[0]);
-
-
-    curr_block = next_block;
-    next_block = curr_block + second_increment;
-    cubes[curr_block].currState = cubes[next_block].currState;
-
-    swap_plane(&cubes[curr_block].currState, order_of_planes[1], order_of_planes[0]);
-    swap_plane(&cubes[curr_block].currState, order_of_planes[2], order_of_planes[1]);
-
-    curr_block = next_block;
-    next_block = curr_block + first_decrement;
-    cubes[curr_block].currState = cubes[next_block].currState;
-
-    swap_plane(&cubes[curr_block].currState, order_of_planes[2], order_of_planes[1]);
-    swap_plane(&cubes[curr_block].currState, order_of_planes[3], order_of_planes[2]);
-
-
-    curr_block = next_block;
-    cubes[curr_block].currState = temp;
-
-    swap_plane(&cubes[next_block].currState, order_of_planes[3], order_of_planes[2]);
-    swap_plane(&cubes[next_block].currState, order_of_planes[0], order_of_planes[3]);
-}
-
-
-// for some reason adding another parameter breaks it??
-void rotate_middle_plane_i(struct cube *cubes, int *order_of_planes, int starting_block,
-                           int first_increment,
-                           int second_increment,
-                           int first_decrement) {
-    // swap one-faced blocks
-    uint32_t temp;
-    for (int i = starting_block; i > starting_block - DIMENSION + 2; i--) {
-        int curr_block = i;
-        temp = cubes[curr_block].currState;
-
-        int next_block = curr_block + first_increment;
-
-        cubes[curr_block].currState = cubes[next_block].currState;
-
-        swap_plane(&cubes[curr_block].currState, order_of_planes[0], order_of_planes[3]);
-
-        curr_block = next_block;
-        next_block = curr_block + second_increment;
-        cubes[curr_block].currState = cubes[next_block].currState;
-
-        swap_plane(&cubes[curr_block].currState, order_of_planes[1], order_of_planes[0]);
-
-        curr_block = next_block;
-        next_block = curr_block + first_decrement;
-        cubes[curr_block].currState = cubes[next_block].currState;
-
-        swap_plane(&cubes[curr_block].currState, order_of_planes[2], order_of_planes[1]);
-
-        curr_block = next_block;
-        cubes[curr_block].currState = temp;
-
-
-        swap_plane(&cubes[next_block].currState, order_of_planes[3], order_of_planes[2]);
-
-        first_increment += 3;
-        second_increment -= 1;
-        first_decrement = -first_increment;
-    }
-
-    // swap edge blocks
-    int curr_block = starting_block - DIMENSION + 2;
-
-    temp = cubes[curr_block].currState;
-
-    int next_block = curr_block + first_increment;
-
-    cubes[curr_block].currState = cubes[next_block].currState;
-
-    swap_plane(&cubes[curr_block].currState, order_of_planes[0], order_of_planes[3]);
-    swap_plane(&cubes[curr_block].currState, order_of_planes[1], order_of_planes[0]);
-
-
-    curr_block = next_block;
-    next_block = curr_block + second_increment;
-    cubes[curr_block].currState = cubes[next_block].currState;
-
-    swap_plane(&cubes[curr_block].currState, order_of_planes[1], order_of_planes[0]);
-    swap_plane(&cubes[curr_block].currState, order_of_planes[2], order_of_planes[1]);
-
-    curr_block = next_block;
-    next_block = curr_block + first_decrement;
-    cubes[curr_block].currState = cubes[next_block].currState;
-
-    swap_plane(&cubes[curr_block].currState, order_of_planes[2], order_of_planes[1]);
-    swap_plane(&cubes[curr_block].currState, order_of_planes[3], order_of_planes[2]);
-
-
-    curr_block = next_block;
-    cubes[curr_block].currState = temp;
-
-    swap_plane(&cubes[next_block].currState, order_of_planes[3], order_of_planes[2]);
-    swap_plane(&cubes[next_block].currState, order_of_planes[0], order_of_planes[3]);
-}
-
-void rotate_mode_length_i(struct cube *cubes, int location) {
-    // if location == 0 || location == DIMENSION - 1 need to rotate sides
-
-    int cubes_per_layer;
-    int starting_block;
-    int first_increment;
-    int second_increment;
-    int first_decrement;
-    int order_of_planes[4];
-
-    if (location == 0) {
-        cubes_per_layer = DIMENSION * 4 - 4;
-        starting_block = DIMENSION - 2;
-
-        first_increment = 2;
-        second_increment = (DIMENSION - 1) * (DIMENSION - 1);
-        first_decrement = -first_increment;
-
-        order_of_planes[0] = 3;
-        order_of_planes[1] = 1;
-        order_of_planes[2] = 0;
-        order_of_planes[3] = 5;
-        rotate_side_plane_i(cubes, order_of_planes, starting_block, first_increment, second_increment, first_decrement);
-        return;
-    }
-
-    if (location == DIMENSION - 1) {
-        cubes_per_layer = DIMENSION * 4 - 4;
-        starting_block = DIMENSION * DIMENSION - 1 + (DIMENSION - 2) * cubes_per_layer - 1 + DIMENSION;
-
-        first_increment = 2;
-        second_increment = (DIMENSION - 1) * (DIMENSION - 1);
-        first_decrement = -first_increment;
-
-        order_of_planes[0] = 3;
-        order_of_planes[1] = 1;
-        order_of_planes[2] = 0;
-        order_of_planes[3] = 5;
-        rotate_side_plane_i(cubes, order_of_planes, starting_block, first_increment, second_increment, first_decrement);
-        return;
-    }
-
-    cubes_per_layer = DIMENSION * 4 - 4;
-    starting_block = (location - 1) * cubes_per_layer + DIMENSION * DIMENSION + DIMENSION - 2;
-
-    first_increment = 2;
-    second_increment = 2 * (DIMENSION - 3) + 3;
-    first_decrement = -first_increment;
-
-    order_of_planes[0] = 3;
-    order_of_planes[1] = 1;
-    order_of_planes[2] = 0;
-    order_of_planes[3] = 5;
-    rotate_middle_plane_i(cubes, order_of_planes, starting_block, first_increment, second_increment, first_decrement);
-}
-
-
-// J
-
-void rotate_middle_plane_height_j(struct cube *cubes, int *order_of_planes, int starting_block,
-                                  int first_increment,
-                                  int second_increment,
-                                  int first_decrement) {
-    // swap one-faced blocks
-    uint32_t temp;
-    for (int i = starting_block; i > starting_block - DIMENSION + 2; i--) {
-        int curr_block = i;
-        temp = cubes[curr_block].currState;
-
-        int next_block = curr_block + first_increment;
-
-        cubes[curr_block].currState = cubes[next_block].currState;
-
-        swap_plane(&cubes[curr_block].currState, order_of_planes[0], order_of_planes[3]);
-
-        curr_block = next_block;
-        next_block = curr_block + second_increment;
-        cubes[curr_block].currState = cubes[next_block].currState;
-
-        swap_plane(&cubes[curr_block].currState, order_of_planes[1], order_of_planes[0]);
-
-        curr_block = next_block;
-        next_block = curr_block + first_decrement;
-        cubes[curr_block].currState = cubes[next_block].currState;
-
-        swap_plane(&cubes[curr_block].currState, order_of_planes[2], order_of_planes[1]);
-
-        curr_block = next_block;
-        cubes[curr_block].currState = temp;
-
-
-        swap_plane(&cubes[next_block].currState, order_of_planes[3], order_of_planes[2]);
-
-        first_increment += 4 * (DIMENSION - 4) + 13;
-        second_increment += -first_increment + 2;
-        first_decrement += -first_increment;
-    }
-
-    // swap edge blocks
-    int curr_block = starting_block - DIMENSION + 2;
-
-    first_decrement = -first_increment;
-
-    temp = cubes[curr_block].currState;
-
-    int next_block = curr_block + first_increment;
-
-    cubes[curr_block].currState = cubes[next_block].currState;
-
-    swap_plane(&cubes[curr_block].currState, order_of_planes[0], order_of_planes[3]);
-    swap_plane(&cubes[curr_block].currState, order_of_planes[1], order_of_planes[0]);
-
-
-    curr_block = next_block;
-    next_block = curr_block + second_increment;
-    cubes[curr_block].currState = cubes[next_block].currState;
-
-    swap_plane(&cubes[curr_block].currState, order_of_planes[1], order_of_planes[0]);
-    swap_plane(&cubes[curr_block].currState, order_of_planes[2], order_of_planes[1]);
-
-    curr_block = next_block;
-    next_block = curr_block + first_decrement;
-    cubes[curr_block].currState = cubes[next_block].currState;
-
-    swap_plane(&cubes[curr_block].currState, order_of_planes[2], order_of_planes[1]);
-    swap_plane(&cubes[curr_block].currState, order_of_planes[3], order_of_planes[2]);
-
-
-    curr_block = next_block;
-    cubes[curr_block].currState = temp;
-
-    swap_plane(&cubes[next_block].currState, order_of_planes[3], order_of_planes[2]);
-    swap_plane(&cubes[next_block].currState, order_of_planes[0], order_of_planes[3]);
-}
 
 void load_cube_in_plane(struct cube *cubes, struct cube **select_cubes, int mode, int location) {
 
@@ -1075,7 +793,17 @@ void load_cube_in_plane(struct cube *cubes, struct cube **select_cubes, int mode
                     j == 0 || j == DIMENSION - 1 ||
                     k == 0 || k == DIMENSION - 1) {
 
+                    if (mode == MODE_LENGTH_I && i == location) {
+                        select_cubes[select_count] = &cubes[count];
+                        select_count++;
+                    }
+
                     if (mode == MODE_WIDTH_J && j == location) {
+                        select_cubes[select_count] = &cubes[count];
+                        select_count++;
+                    }
+
+                    if (mode == MODE_HEIGHT_K && k == location) {
                         select_cubes[select_count] = &cubes[count];
                         select_count++;
                     }
@@ -1119,15 +847,11 @@ void reverseArray(struct cube** arr, int start, int end) {
     }
 }
 
-void rotate_mode_height_j(struct cube *cubes, int location) {
+void rotate(struct cube *cubes, int mode, int location, Pair *plane_order) {
     int i, j, k;
     int cubes_per_plane;
 
-    Pair plane_order[4] = {
-            {4, 3},
-            {3, 2},
-            {2, 0},
-            {0, 4}};
+
 
     if (location == 0) {
         cubes_per_plane = DIMENSION * DIMENSION;
@@ -1142,15 +866,9 @@ void rotate_mode_height_j(struct cube *cubes, int location) {
     cubes_per_plane = DIMENSION * 4 - 4;
     struct cube *select_cubes[cubes_per_plane];
 
-    load_cube_in_plane(cubes, select_cubes, MODE_WIDTH_J, location);
+    load_cube_in_plane(cubes, select_cubes, mode, location);
 
     struct cube *grouped_cubes[4 * (DIMENSION - 1)];
-
-    //    for(i=0; i<4; i++) {
-    //        for(j=0; j<DIMENSION-1; j++) {
-    //            grouped_cubes[i][j] = NULL;
-    //        }
-    //    }
 
     for (i = 0; i < 4; i++) {
         int temp = 0;
@@ -1163,7 +881,7 @@ void rotate_mode_height_j(struct cube *cubes, int location) {
             }
 
             if (num_active_planes == 2 && is_active_plane(currState, plane_order[i].first)
-                    && is_active_plane(currState, plane_order[i].second)) {
+                && is_active_plane(currState, plane_order[i].second)) {
                 grouped_cubes[i * (DIMENSION - 1) + temp] = select_cubes[j];
                 temp++;
             }
@@ -1231,9 +949,7 @@ void rotate_mode_height_j(struct cube *cubes, int location) {
                plane_order[3].first);
     swap_plane(&(grouped_cubes[(3) * (DIMENSION - 1) + j]->currState), plane_order[0].second,
                plane_order[0].first);
-
 }
-
 
 
 
@@ -1335,9 +1051,26 @@ uint32_t *render(int dt, float a, float b, float c, int dimension, int mode, int
     }
     if (toRotate) {
         if (mode == MODE_LENGTH_I) {
-            rotate_mode_length_i(cubes, location);
-        } else if (mode == MODE_WIDTH_J) {
-            rotate_mode_height_j(cubes, location);
+            Pair plane_order[4] = {
+                    {5, 3},
+                    {3, 1},
+                    {1, 0},
+                    {0, 5}};
+            rotate(cubes, mode, location, plane_order);
+        } if (mode == MODE_WIDTH_J) {
+            Pair plane_order[4] = {
+                    {4, 3},
+                    {3, 2},
+                    {2, 0},
+                    {0, 4}};
+            rotate(cubes, mode, location, plane_order);
+        } if (mode == MODE_HEIGHT_K) {
+            Pair plane_order[4] = {
+                    {5, 4},
+                    {4, 1},
+                    {1, 2},
+                    {2, 5}};
+            rotate(cubes, mode, location, plane_order);
         }
     }
 
@@ -1377,7 +1110,7 @@ void *memcpy(void *dest, const void *src, size_t n) {
 }
 
 int main(void) {
-    render(1, 0, 0, 0, 4, 1, 1, 1);
+    render(1, 0, 0, 0, 4, MODE_LENGTH_I, 1, 1);
 
     return 0;
 }

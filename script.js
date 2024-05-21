@@ -93,7 +93,7 @@ async function startDemo() {
             console.log("rotate");
             console.log(dt);
 
-            instance.exports.rotate_mode_length_i(1);
+            // instance.exports.rotate_mode_length_i(1);
             toRotate = 1;
         }
         render(instance, dt, A, B, C, dimension, mode, loc, toRotate);
