@@ -27,7 +27,7 @@
 #define MODE_HEIGHT_K 2
 
 #define FLT_MAX 3.402823466e+38F /* max value */
-#define FLT_MIN (-FLT_MAX) /* min positive value */
+#define FLT_MIN (-FLT_MAX)       /* min positive value */
 
 // order goes as this: p0123, p5140, p4062, p5476, p5173, p7362
 
@@ -35,7 +35,7 @@
 int DIMENSION = 2;
 
 float A, B, C;
-static uint32_t pixels[WIDTH*HEIGHT];
+static uint32_t pixels[WIDTH * HEIGHT];
 //static uint32_t currState[MAX_CUBES];
 
 
@@ -66,36 +66,39 @@ struct cube {
     uint32_t currState;
 };
 
+typedef struct {
+    int first;
+    int second;
+} Pair;
+
 float get_average_z(struct plane input) {
-    return (input.pointA.z + input.pointB.z + input.pointC.z + input.pointD.z) / (float)NUM_PLANES;
+    return (input.pointA.z + input.pointB.z + input.pointC.z + input.pointD.z) / (float) NUM_PLANES;
 }
 
-float get_average_z_corners(struct Point_3D* input) {
+float get_average_z_corners(struct Point_3D *input) {
     float sum = 0;
-    for(int i=0; i<NUM_CORNERS; i++) {
+    for (int i = 0; i < NUM_CORNERS; i++) {
         sum += input[i].z;
     }
     return sum;
-
 }
 
 // todo: write comments
 void draw_planes(uint32_t *canvas, int width, int height,
-                 struct plane* p, int count) {
+                 struct plane *p, int count) {
     // sort planes based on average z value
     int i, j, min_idx;
 
     // selection sort
-    for (i = 0; i < count-1; i++)
-    {
+    for (i = 0; i < count - 1; i++) {
         // Find the minimum element in unsorted array
         min_idx = i;
-        for (j = i+1; j < count; j++)
-                if (get_average_z(p[j]) > get_average_z(p[min_idx]))
+        for (j = i + 1; j < count; j++)
+            if (get_average_z(p[j]) > get_average_z(p[min_idx]))
                 min_idx = j;
 
         // Swap the found minimum element with the first element
-        if(min_idx != i) {
+        if (min_idx != i) {
             struct plane temp = p[min_idx];
             p[min_idx] = p[i];
             p[i] = temp;
@@ -103,19 +106,18 @@ void draw_planes(uint32_t *canvas, int width, int height,
     }
 
     // paint accordingly
-    for(i = 3; i < 6; i++) {
+    for (i = 3; i < 6; i++) {
         fill_triangle(canvas, width, height,
-                      (int)(p[i].s_pointA.x+0.5), (int)(p[i].s_pointA.y+0.5),
-                      (int)(p[i].s_pointB.x+0.5), (int)(p[i].s_pointB.y+0.5),
-                      (int)(p[i].s_pointC.x+0.5), (int)(p[i].s_pointC.y+0.5),
+                      (int) (p[i].s_pointA.x + 0.5), (int) (p[i].s_pointA.y + 0.5),
+                      (int) (p[i].s_pointB.x + 0.5), (int) (p[i].s_pointB.y + 0.5),
+                      (int) (p[i].s_pointC.x + 0.5), (int) (p[i].s_pointC.y + 0.5),
                       p[i].color);
 
         fill_triangle(canvas, width, height,
-                      (int)(p[i].s_pointD.x+0.5), (int)(p[i].s_pointD.y+0.5),
-                      (int)(p[i].s_pointB.x+0.5), (int)(p[i].s_pointB.y+0.5),
-                      (int)(p[i].s_pointC.x+0.5), (int)(p[i].s_pointC.y+0.5),
+                      (int) (p[i].s_pointD.x + 0.5), (int) (p[i].s_pointD.y + 0.5),
+                      (int) (p[i].s_pointB.x + 0.5), (int) (p[i].s_pointB.y + 0.5),
+                      (int) (p[i].s_pointC.x + 0.5), (int) (p[i].s_pointC.y + 0.5),
                       p[i].color);
-
     }
 }
 
@@ -138,7 +140,7 @@ void draw_planes(uint32_t *canvas, int width, int height,
  *      No return value. Computed cubes are stored in cubes and the proper image is
  *          drawn into the canvas.
  */
-void convert_3D_to_2D(struct Point_2D* point2D, int width, int height, struct Point_3D* points, struct Point_3D camera) {
+void convert_3D_to_2D(struct Point_2D *point2D, int width, int height, struct Point_3D *points, struct Point_3D camera) {
 
     for (size_t i = 0; i < NUM_CORNERS; ++i) {
         struct Point_3D curr = points[i];
@@ -173,17 +175,17 @@ void convert_3D_to_2D(struct Point_2D* point2D, int width, int height, struct Po
  *      No return value. Computed cubes are stored in cubes and the proper image is
  *          drawn into the canvas.
  */
-void draw_cube(uint32_t *canvas, int width, int height, struct Point_3D* points,
-        struct Point_3D camera, uint32_t* colors, uint32_t curr_color) {
+void draw_cube(uint32_t *canvas, int width, int height, struct Point_3D *points,
+               struct Point_3D camera, uint32_t *colors, uint32_t curr_color) {
     struct Point_2D c_2D[NUM_CORNERS];
 
     convert_3D_to_2D(c_2D, width, height, points, camera);
 
     // todo: replace last thing with BG_COLOR
     struct plane p0123 = {points[0], points[1], points[2], points[3],
-            c_2D[0], c_2D[1], c_2D[2], c_2D[3], BG_COLOR};
+                          c_2D[0], c_2D[1], c_2D[2], c_2D[3], BG_COLOR};
     struct plane p5140 = {points[5], points[1], points[4], points[0],
-            c_2D[5], c_2D[1], c_2D[4], c_2D[0], BG_COLOR};
+                          c_2D[5], c_2D[1], c_2D[4], c_2D[0], BG_COLOR};
     struct plane p4062 = {points[4], points[0], points[6], points[2], c_2D[4], c_2D[0], c_2D[6], c_2D[2],
                           BG_COLOR};
     struct plane p5476 = {points[5], points[4], points[7], points[6], c_2D[5], c_2D[4], c_2D[7], c_2D[6],
@@ -196,9 +198,9 @@ void draw_cube(uint32_t *canvas, int width, int height, struct Point_3D* points,
     struct plane planes[NUM_PLANES] = {p0123, p5140, p4062, p5476, p5173, p7362};
 
     for (int i = 0; i < 3; i++) {
-        uint32_t color_id = ((curr_color << (32-6*(i+1) + 3)) >> 29);
-        uint32_t plane_id = ((curr_color << (32-6*(i+1)) >> 29));
-        if(plane_id != 7 && color_id != 7) {
+        uint32_t color_id = ((curr_color << (32 - 6 * (i + 1) + 3)) >> 29);
+        uint32_t plane_id = ((curr_color << (32 - 6 * (i + 1)) >> 29));
+        if (plane_id != 7 && color_id != 7) {
             planes[plane_id].color = colors[color_id];
         }
     }
@@ -254,8 +256,8 @@ float calculateZ(float i, float j, float k) {
  *  Return:
  *      No return value. The modulo value is placed directly into the input float.
  */
-void f_modulo(float* x, float y) {
-    *x =  *x - y * (float)(int)(*x/y);
+void f_modulo(float *x, float y) {
+    *x = *x - y * (float) (int) (*x / y);
 }
 
 
@@ -287,12 +289,12 @@ void generateCorners(struct cube *cube, float magnitude, float camera_distance, 
     float y_factor = -1;
     float z_factor = -1;
 
-    for(int i=0; i<NUM_CORNERS; i++){
+    for (int i = 0; i < NUM_CORNERS; i++) {
         struct Point_3D newPoint;
         // to get all combinations! like truth table thing to get all combos
         x_factor *= -1;
-        if((i % 2) == 0) y_factor *= -1;
-        if((i % 4) == 0) z_factor *= -1;
+        if ((i % 2) == 0) y_factor *= -1;
+        if ((i % 4) == 0) z_factor *= -1;
 
         newPoint.x = x_factor * magnitude + x_offset;
         newPoint.y = y_factor * magnitude + y_offset;
@@ -300,11 +302,10 @@ void generateCorners(struct cube *cube, float magnitude, float camera_distance, 
 
         cube->points[i] = newPoint;
     }
-
 }
 
 void copy_cube(struct cube *dest, struct cube *src) {
-    for(int i=0; i<NUM_CORNERS; i++) {
+    for (int i = 0; i < NUM_CORNERS; i++) {
         dest->points[i] = src->points[i];
     }
     //dest->currState = src->currState;
@@ -324,8 +325,8 @@ void load_default(uint32_t *curr_cube, int planeOfInterest, int plane_count) {
 
     *curr_cube = *curr_cube & mask;
 
-    uint32_t plane_id = (planeOfInterest) << (6*plane_count+3);
-    uint32_t color_id = (planeOfInterest) << (6*plane_count);
+    uint32_t plane_id = (planeOfInterest) << (6 * plane_count + 3);
+    uint32_t color_id = (planeOfInterest) << (6 * plane_count);
 
     *curr_cube += plane_id;
     *curr_cube += color_id;
@@ -359,27 +360,26 @@ struct cube *generateCubes(struct cube *cubes, struct cube *translatedCubes, int
     int cubes_height = DIMENSION;
 
 
-
-    for(i=0; i<num_cubes; i++) {
-        for(j=0; j<NUM_CORNERS; j++) {
+    for (i = 0; i < num_cubes; i++) {
+        for (j = 0; j < NUM_CORNERS; j++) {
             translatedCubes[i].points[j] = cubes[i].points[j];
         }
         translatedCubes[i].currState = cubes[i].currState;
     }
 
-    float spacing = (float)(SCALE*2);
+    float spacing = (float) (SCALE * 2);
 
-    float x_offset = -spacing*((DIMENSION-1)/(float)2);
-    float y_offset = -spacing*((DIMENSION-1)/(float)2);
-    float z_offset = -spacing*((DIMENSION-1)/(float)2);
+    float x_offset = -spacing * ((DIMENSION - 1) / (float) 2);
+    float y_offset = -spacing * ((DIMENSION - 1) / (float) 2);
+    float z_offset = -spacing * ((DIMENSION - 1) / (float) 2);
     int count = 0;
 
 
     // stickers!
-    for(i=0; i<cubes_rows; i++) {
-        for(j=0; j<cubes_cols; j++) {
-            for(k=0; k<cubes_height; k++) {
-                if(i == 0 || i == cubes_rows - 1 ||
+    for (i = 0; i < cubes_rows; i++) {
+        for (j = 0; j < cubes_cols; j++) {
+            for (k = 0; k < cubes_height; k++) {
+                if (i == 0 || i == cubes_rows - 1 ||
                     j == 0 || j == cubes_cols - 1 ||
                     k == 0 || k == cubes_height - 1) {
                     generateCorners(&translatedCubes[count], magnitude, camera_distance, x_offset + (spacing * (float) i),
@@ -391,16 +391,16 @@ struct cube *generateCubes(struct cube *cubes, struct cube *translatedCubes, int
         }
     }
 
-    for(i=0; i<num_cubes; i++) {
+    for (i = 0; i < num_cubes; i++) {
         copy_cube(&cubes[i], &translatedCubes[i]);
     }
 
     // rotate corners for each cube
-    for(i=0; i<num_cubes; i++) {
-        for(j=0; j<NUM_CORNERS; j++) {
+    for (i = 0; i < num_cubes; i++) {
+        for (j = 0; j < NUM_CORNERS; j++) {
             struct Point_3D new_point = {calculateX(translatedCubes[i].points[j].x, translatedCubes[i].points[j].y, translatedCubes[i].points[j].z - camera_distance),
-                    calculateY(translatedCubes[i].points[j].x, translatedCubes[i].points[j].y, translatedCubes[i].points[j].z - camera_distance),
-                    calculateZ(translatedCubes[i].points[j].x, translatedCubes[i].points[j].y, translatedCubes[i].points[j].z - camera_distance) + camera_distance};
+                                         calculateY(translatedCubes[i].points[j].x, translatedCubes[i].points[j].y, translatedCubes[i].points[j].z - camera_distance),
+                                         calculateZ(translatedCubes[i].points[j].x, translatedCubes[i].points[j].y, translatedCubes[i].points[j].z - camera_distance) + camera_distance};
             translatedCubes[i].points[j] = new_point;
         }
     }
@@ -408,19 +408,18 @@ struct cube *generateCubes(struct cube *cubes, struct cube *translatedCubes, int
     // draw the cubes!
     // selection sort
     int min_idx;
-    for (i = 0; i < num_cubes-1; i++)
-    {
+    for (i = 0; i < num_cubes - 1; i++) {
         // Find the minimum element in unsorted array
         min_idx = i;
-        for (j = i+1; j < num_cubes; j++)
+        for (j = i + 1; j < num_cubes; j++)
             if (get_average_z_corners(translatedCubes[j].points) > get_average_z_corners(translatedCubes[min_idx].points))
                 min_idx = j;
 
         // Swap the found minimum element with the first element
         struct Point_3D temp;
         uint32_t temp_state;
-        if(min_idx != i) {
-            for(j=0; j < NUM_CORNERS; j++) {
+        if (min_idx != i) {
+            for (j = 0; j < NUM_CORNERS; j++) {
                 temp = translatedCubes[min_idx].points[j];
                 translatedCubes[min_idx].points[j] = translatedCubes[i].points[j];
                 translatedCubes[i].points[j] = temp;
@@ -430,51 +429,49 @@ struct cube *generateCubes(struct cube *cubes, struct cube *translatedCubes, int
             translatedCubes[min_idx].currState = translatedCubes[i].currState;
             translatedCubes[i].currState = temp_state;
 
-//            temp_state = currState[min_idx];
-//            currState[min_idx] = currState[i];
-//            currState[i] = temp_state;
+            //            temp_state = currState[min_idx];
+            //            currState[min_idx] = currState[i];
+            //            currState[i] = temp_state;
         }
     }
 
     return translatedCubes;
-
-
 }
 
 void draw_guide_lines(struct Point_2D *translatedPoints) {
     // draw neighbor line
     int i;
-    for(i=0; i<NUM_CORNERS; i+=2) {
-        draw_line(pixels, WIDTH, HEIGHT, (int)(translatedPoints[i].x + 0.5), (int)(translatedPoints[i].y + 0.5), (int)(translatedPoints[i+1].x + 0.5),
-                  (int)(translatedPoints[i+1].y + 0.5), HOTPINK);
+    for (i = 0; i < NUM_CORNERS; i += 2) {
+        draw_line(pixels, WIDTH, HEIGHT, (int) (translatedPoints[i].x + 0.5), (int) (translatedPoints[i].y + 0.5), (int) (translatedPoints[i + 1].x + 0.5),
+                  (int) (translatedPoints[i + 1].y + 0.5), HOTPINK);
     }
 
     // draw long line
-    for(i = 0; i<NUM_CORNERS; i+=2) {
-        draw_line(pixels, WIDTH, HEIGHT, (int)(translatedPoints[i].x + 0.5), (int)(translatedPoints[i].y + 0.5), (int)(translatedPoints[(i + 2) % 8].x + 0.5), (int)(translatedPoints[(i + 2) % 8].y + 0.5), HOTPINK);
-        draw_line(pixels, WIDTH, HEIGHT, (int)(translatedPoints[i+1].x + 0.5), (int)(translatedPoints[i+1].y + 0.5), (int)(translatedPoints[(i + 3) % 8].x + 0.5), (int)(translatedPoints[(i + 3) % 8].y + 0.5), HOTPINK);
+    for (i = 0; i < NUM_CORNERS; i += 2) {
+        draw_line(pixels, WIDTH, HEIGHT, (int) (translatedPoints[i].x + 0.5), (int) (translatedPoints[i].y + 0.5), (int) (translatedPoints[(i + 2) % 8].x + 0.5), (int) (translatedPoints[(i + 2) % 8].y + 0.5), HOTPINK);
+        draw_line(pixels, WIDTH, HEIGHT, (int) (translatedPoints[i + 1].x + 0.5), (int) (translatedPoints[i + 1].y + 0.5), (int) (translatedPoints[(i + 3) % 8].x + 0.5), (int) (translatedPoints[(i + 3) % 8].y + 0.5), HOTPINK);
     }
 }
 
-void process_mode_length_i(struct cube* cubes, struct cube* cubesOfInterest, int location, float camera_distance, struct Point_3D camera) {
+void process_mode_length_i(struct cube *cubes, struct cube *cubesOfInterest, int location, float camera_distance, struct Point_3D camera) {
     int i, j, k;
     int count = 0;
-    for(i=0; i<DIMENSION; i++) {
-        for(j=0; j<DIMENSION; j++) {
-            for(k=0; k<DIMENSION; k++) {
-                if(i == 0 || i == DIMENSION - 1 ||
-                   j == 0 || j == DIMENSION - 1 ||
-                   k == 0 || k == DIMENSION - 1) {
-                    if(i == location && j == 0 && k == 0) {
+    for (i = 0; i < DIMENSION; i++) {
+        for (j = 0; j < DIMENSION; j++) {
+            for (k = 0; k < DIMENSION; k++) {
+                if (i == 0 || i == DIMENSION - 1 ||
+                    j == 0 || j == DIMENSION - 1 ||
+                    k == 0 || k == DIMENSION - 1) {
+                    if (i == location && j == 0 && k == 0) {
                         copy_cube(&cubesOfInterest[0], &cubes[count]);
                     }
-                    if(i == location && j == DIMENSION-1 && k == 0) {
+                    if (i == location && j == DIMENSION - 1 && k == 0) {
                         copy_cube(&cubesOfInterest[1], &cubes[count]);
                     }
-                    if(i == location && j == DIMENSION-1 && k == DIMENSION-1) {
+                    if (i == location && j == DIMENSION - 1 && k == DIMENSION - 1) {
                         copy_cube(&cubesOfInterest[2], &cubes[count]);
                     }
-                    if(i == location && j == 0 && k == DIMENSION-1) {
+                    if (i == location && j == 0 && k == DIMENSION - 1) {
                         copy_cube(&cubesOfInterest[3], &cubes[count]);
                     }
 
@@ -488,22 +485,22 @@ void process_mode_length_i(struct cube* cubes, struct cube* cubesOfInterest, int
 
     float miny = FLT_MAX, minz = FLT_MAX;
 
-    for(i=0; i<NUM_CORNERS; i++) {
-        if(cubesOfInterest[0].points[i].y < miny) {
+    for (i = 0; i < NUM_CORNERS; i++) {
+        if (cubesOfInterest[0].points[i].y < miny) {
             miny = cubesOfInterest[0].points[i].y;
         }
-        if(cubesOfInterest[0].points[i].z < minz) {
+        if (cubesOfInterest[0].points[i].z < minz) {
             minz = cubesOfInterest[0].points[i].z;
         }
     }
 
     float maxy = FLT_MIN, maxz = FLT_MIN;
 
-    for(i=0; i<NUM_CORNERS; i++) {
-        if(cubesOfInterest[2].points[i].y > maxy) {
+    for (i = 0; i < NUM_CORNERS; i++) {
+        if (cubesOfInterest[2].points[i].y > maxy) {
             maxy = cubesOfInterest[2].points[i].y;
         }
-        if(cubesOfInterest[2].points[i].z > maxz) {
+        if (cubesOfInterest[2].points[i].z > maxz) {
             maxz = cubesOfInterest[2].points[i].z;
         }
     }
@@ -511,35 +508,35 @@ void process_mode_length_i(struct cube* cubes, struct cube* cubesOfInterest, int
     struct Point_3D corners[NUM_CORNERS];
     int temp = 0;
 
-    for(i=0; i<NUM_CORNERS; i++) {
-        if(cubesOfInterest[0].points[i].y == miny && cubesOfInterest[0].points[i].z == minz) {
+    for (i = 0; i < NUM_CORNERS; i++) {
+        if (cubesOfInterest[0].points[i].y == miny && cubesOfInterest[0].points[i].z == minz) {
             copy_3D_point(&corners[temp], &cubesOfInterest[0].points[i]);
             temp++;
         }
     }
 
-    for(i=0; i<NUM_CORNERS; i++) {
-        if(cubesOfInterest[1].points[i].y == maxy && cubesOfInterest[1].points[i].z == minz) {
+    for (i = 0; i < NUM_CORNERS; i++) {
+        if (cubesOfInterest[1].points[i].y == maxy && cubesOfInterest[1].points[i].z == minz) {
             copy_3D_point(&corners[temp], &cubesOfInterest[1].points[i]);
             temp++;
         }
     }
 
-    for(i=0; i<NUM_CORNERS; i++) {
+    for (i = 0; i < NUM_CORNERS; i++) {
         if (cubesOfInterest[2].points[i].y == maxy && cubesOfInterest[2].points[i].z == maxz) {
             copy_3D_point(&corners[temp], &cubesOfInterest[2].points[i]);
             temp++;
         }
     }
 
-    for(i=0; i<NUM_CORNERS; i++) {
-        if(cubesOfInterest[3].points[i].y == miny && cubesOfInterest[3].points[i].z == maxz) {
+    for (i = 0; i < NUM_CORNERS; i++) {
+        if (cubesOfInterest[3].points[i].y == miny && cubesOfInterest[3].points[i].z == maxz) {
             copy_3D_point(&corners[temp], &cubesOfInterest[3].points[i]);
             temp++;
         }
     }
 
-    for(i=0; i<NUM_CORNERS; i++) {
+    for (i = 0; i < NUM_CORNERS; i++) {
         struct Point_3D new_point = {calculateX(corners[i].x, corners[i].y, corners[i].z - camera_distance),
                                      calculateY(corners[i].x, corners[i].y, corners[i].z - camera_distance),
                                      calculateZ(corners[i].x, corners[i].y, corners[i].z - camera_distance) + camera_distance};
@@ -550,28 +547,27 @@ void process_mode_length_i(struct cube* cubes, struct cube* cubesOfInterest, int
     convert_3D_to_2D(translatedPoints, WIDTH, HEIGHT, corners, camera);
 
     draw_guide_lines(translatedPoints);
-
 }
 
-void process_mode_width_j(struct cube* cubes, struct cube* cubesOfInterest, int location, float camera_distance, struct Point_3D camera) {
+void process_mode_width_j(struct cube *cubes, struct cube *cubesOfInterest, int location, float camera_distance, struct Point_3D camera) {
     int i, j, k;
     int count = 0;
-    for(i=0; i<DIMENSION; i++) {
-        for(j=0; j<DIMENSION; j++) {
-            for(k=0; k<DIMENSION; k++) {
-                if(i == 0 || i == DIMENSION - 1 ||
-                   j == 0 || j == DIMENSION - 1 ||
-                   k == 0 || k == DIMENSION - 1) {
-                    if(i == 0 && j == location && k == 0) {
+    for (i = 0; i < DIMENSION; i++) {
+        for (j = 0; j < DIMENSION; j++) {
+            for (k = 0; k < DIMENSION; k++) {
+                if (i == 0 || i == DIMENSION - 1 ||
+                    j == 0 || j == DIMENSION - 1 ||
+                    k == 0 || k == DIMENSION - 1) {
+                    if (i == 0 && j == location && k == 0) {
                         copy_cube(&cubesOfInterest[0], &cubes[count]);
                     }
-                    if(i == DIMENSION-1 && j == location && k == 0) {
+                    if (i == DIMENSION - 1 && j == location && k == 0) {
                         copy_cube(&cubesOfInterest[1], &cubes[count]);
                     }
-                    if(i == DIMENSION-1 && j == location && k == DIMENSION-1) {
+                    if (i == DIMENSION - 1 && j == location && k == DIMENSION - 1) {
                         copy_cube(&cubesOfInterest[2], &cubes[count]);
                     }
-                    if(i == 0 && j == location && k == DIMENSION-1) {
+                    if (i == 0 && j == location && k == DIMENSION - 1) {
                         copy_cube(&cubesOfInterest[3], &cubes[count]);
                     }
 
@@ -585,22 +581,22 @@ void process_mode_width_j(struct cube* cubes, struct cube* cubesOfInterest, int 
 
     float minx = FLT_MAX, minz = FLT_MAX;
 
-    for(i=0; i<NUM_CORNERS; i++) {
-        if(cubesOfInterest[0].points[i].x < minx) {
+    for (i = 0; i < NUM_CORNERS; i++) {
+        if (cubesOfInterest[0].points[i].x < minx) {
             minx = cubesOfInterest[0].points[i].x;
         }
-        if(cubesOfInterest[0].points[i].z < minz) {
+        if (cubesOfInterest[0].points[i].z < minz) {
             minz = cubesOfInterest[0].points[i].z;
         }
     }
 
     float maxx = FLT_MIN, maxz = FLT_MIN;
 
-    for(i=0; i<NUM_CORNERS; i++) {
-        if(cubesOfInterest[2].points[i].x > maxx) {
+    for (i = 0; i < NUM_CORNERS; i++) {
+        if (cubesOfInterest[2].points[i].x > maxx) {
             maxx = cubesOfInterest[2].points[i].x;
         }
-        if(cubesOfInterest[2].points[i].z > maxz) {
+        if (cubesOfInterest[2].points[i].z > maxz) {
             maxz = cubesOfInterest[2].points[i].z;
         }
     }
@@ -608,35 +604,35 @@ void process_mode_width_j(struct cube* cubes, struct cube* cubesOfInterest, int 
     struct Point_3D corners[NUM_CORNERS];
     int temp = 0;
 
-    for(i=0; i<NUM_CORNERS; i++) {
-        if(cubesOfInterest[0].points[i].x == minx && cubesOfInterest[0].points[i].z == minz) {
+    for (i = 0; i < NUM_CORNERS; i++) {
+        if (cubesOfInterest[0].points[i].x == minx && cubesOfInterest[0].points[i].z == minz) {
             copy_3D_point(&corners[temp], &cubesOfInterest[0].points[i]);
             temp++;
         }
     }
 
-    for(i=0; i<NUM_CORNERS; i++) {
-        if(cubesOfInterest[1].points[i].x == maxx && cubesOfInterest[1].points[i].z == minz) {
+    for (i = 0; i < NUM_CORNERS; i++) {
+        if (cubesOfInterest[1].points[i].x == maxx && cubesOfInterest[1].points[i].z == minz) {
             copy_3D_point(&corners[temp], &cubesOfInterest[1].points[i]);
             temp++;
         }
     }
 
-    for(i=0; i<NUM_CORNERS; i++) {
+    for (i = 0; i < NUM_CORNERS; i++) {
         if (cubesOfInterest[2].points[i].x == maxx && cubesOfInterest[2].points[i].z == maxz) {
             copy_3D_point(&corners[temp], &cubesOfInterest[2].points[i]);
             temp++;
         }
     }
 
-    for(i=0; i<NUM_CORNERS; i++) {
-        if(cubesOfInterest[3].points[i].x == minx && cubesOfInterest[3].points[i].z == maxz) {
+    for (i = 0; i < NUM_CORNERS; i++) {
+        if (cubesOfInterest[3].points[i].x == minx && cubesOfInterest[3].points[i].z == maxz) {
             copy_3D_point(&corners[temp], &cubesOfInterest[3].points[i]);
             temp++;
         }
     }
 
-    for(i=0; i<NUM_CORNERS; i++) {
+    for (i = 0; i < NUM_CORNERS; i++) {
         struct Point_3D new_point = {calculateX(corners[i].x, corners[i].y, corners[i].z - camera_distance),
                                      calculateY(corners[i].x, corners[i].y, corners[i].z - camera_distance),
                                      calculateZ(corners[i].x, corners[i].y, corners[i].z - camera_distance) + camera_distance};
@@ -649,25 +645,25 @@ void process_mode_width_j(struct cube* cubes, struct cube* cubesOfInterest, int 
     draw_guide_lines(translatedPoints);
 }
 
-void process_mode_height_k(struct cube* cubes, struct cube* cubesOfInterest, int location, float camera_distance, struct Point_3D camera) {
+void process_mode_height_k(struct cube *cubes, struct cube *cubesOfInterest, int location, float camera_distance, struct Point_3D camera) {
     int i, j, k;
     int count = 0;
-    for(i=0; i<DIMENSION; i++) {
-        for(j=0; j<DIMENSION; j++) {
-            for(k=0; k<DIMENSION; k++) {
-                if(i == 0 || i == DIMENSION - 1 ||
-                   j == 0 || j == DIMENSION - 1 ||
-                   k == 0 || k == DIMENSION - 1) {
-                    if(i == 0 && j == 0 && k == location) {
+    for (i = 0; i < DIMENSION; i++) {
+        for (j = 0; j < DIMENSION; j++) {
+            for (k = 0; k < DIMENSION; k++) {
+                if (i == 0 || i == DIMENSION - 1 ||
+                    j == 0 || j == DIMENSION - 1 ||
+                    k == 0 || k == DIMENSION - 1) {
+                    if (i == 0 && j == 0 && k == location) {
                         copy_cube(&cubesOfInterest[0], &cubes[count]);
                     }
-                    if(i == DIMENSION-1 && j == 0 && k == location) {
+                    if (i == DIMENSION - 1 && j == 0 && k == location) {
                         copy_cube(&cubesOfInterest[1], &cubes[count]);
                     }
-                    if(i == DIMENSION-1 && j == DIMENSION-1 && k == location) {
+                    if (i == DIMENSION - 1 && j == DIMENSION - 1 && k == location) {
                         copy_cube(&cubesOfInterest[2], &cubes[count]);
                     }
-                    if(i == 0 && j == DIMENSION-1 && k == location) {
+                    if (i == 0 && j == DIMENSION - 1 && k == location) {
                         copy_cube(&cubesOfInterest[3], &cubes[count]);
                     }
 
@@ -681,22 +677,22 @@ void process_mode_height_k(struct cube* cubes, struct cube* cubesOfInterest, int
 
     float minx = FLT_MAX, miny = FLT_MAX;
 
-    for(i=0; i<NUM_CORNERS; i++) {
-        if(cubesOfInterest[0].points[i].x < minx) {
+    for (i = 0; i < NUM_CORNERS; i++) {
+        if (cubesOfInterest[0].points[i].x < minx) {
             minx = cubesOfInterest[0].points[i].x;
         }
-        if(cubesOfInterest[0].points[i].y < miny) {
+        if (cubesOfInterest[0].points[i].y < miny) {
             miny = cubesOfInterest[0].points[i].y;
         }
     }
 
     float maxx = FLT_MIN, maxy = FLT_MIN;
 
-    for(i=0; i<NUM_CORNERS; i++) {
-        if(cubesOfInterest[2].points[i].x > maxx) {
+    for (i = 0; i < NUM_CORNERS; i++) {
+        if (cubesOfInterest[2].points[i].x > maxx) {
             maxx = cubesOfInterest[2].points[i].x;
         }
-        if(cubesOfInterest[2].points[i].y > maxy) {
+        if (cubesOfInterest[2].points[i].y > maxy) {
             maxy = cubesOfInterest[2].points[i].y;
         }
     }
@@ -704,35 +700,35 @@ void process_mode_height_k(struct cube* cubes, struct cube* cubesOfInterest, int
     struct Point_3D corners[NUM_CORNERS];
     int temp = 0;
 
-    for(i=0; i<NUM_CORNERS; i++) {
-        if(cubesOfInterest[0].points[i].x == minx && cubesOfInterest[0].points[i].y == miny) {
+    for (i = 0; i < NUM_CORNERS; i++) {
+        if (cubesOfInterest[0].points[i].x == minx && cubesOfInterest[0].points[i].y == miny) {
             copy_3D_point(&corners[temp], &cubesOfInterest[0].points[i]);
             temp++;
         }
     }
 
-    for(i=0; i<NUM_CORNERS; i++) {
-        if(cubesOfInterest[1].points[i].x == maxx && cubesOfInterest[1].points[i].y == miny) {
+    for (i = 0; i < NUM_CORNERS; i++) {
+        if (cubesOfInterest[1].points[i].x == maxx && cubesOfInterest[1].points[i].y == miny) {
             copy_3D_point(&corners[temp], &cubesOfInterest[1].points[i]);
             temp++;
         }
     }
 
-    for(i=0; i<NUM_CORNERS; i++) {
+    for (i = 0; i < NUM_CORNERS; i++) {
         if (cubesOfInterest[2].points[i].x == maxx && cubesOfInterest[2].points[i].y == maxy) {
             copy_3D_point(&corners[temp], &cubesOfInterest[2].points[i]);
             temp++;
         }
     }
 
-    for(i=0; i<NUM_CORNERS; i++) {
-        if(cubesOfInterest[3].points[i].x == minx && cubesOfInterest[3].points[i].y == maxy) {
+    for (i = 0; i < NUM_CORNERS; i++) {
+        if (cubesOfInterest[3].points[i].x == minx && cubesOfInterest[3].points[i].y == maxy) {
             copy_3D_point(&corners[temp], &cubesOfInterest[3].points[i]);
             temp++;
         }
     }
 
-    for(i=0; i<NUM_CORNERS; i++) {
+    for (i = 0; i < NUM_CORNERS; i++) {
         struct Point_3D new_point = {calculateX(corners[i].x, corners[i].y, corners[i].z - camera_distance),
                                      calculateY(corners[i].x, corners[i].y, corners[i].z - camera_distance),
                                      calculateZ(corners[i].x, corners[i].y, corners[i].z - camera_distance) + camera_distance};
@@ -746,32 +742,28 @@ void process_mode_height_k(struct cube* cubes, struct cube* cubesOfInterest, int
     draw_guide_lines(translatedPoints);
 }
 
-void generateIndicator(struct cube* cubes, int mode, int location, float camera_distance, struct Point_3D camera) {
-    if(location >= DIMENSION) {
+void generateIndicator(struct cube *cubes, int mode, int location, float camera_distance, struct Point_3D camera) {
+    if (location >= DIMENSION) {
         return;
     }
 
     struct cube cubesOfInterest[4];
 
-    if(mode == MODE_LENGTH_I) {
+    if (mode == MODE_LENGTH_I) {
         process_mode_length_i(cubes, cubesOfInterest, location, camera_distance, camera);
-    } else if(mode == MODE_WIDTH_J) {
+    } else if (mode == MODE_WIDTH_J) {
         process_mode_width_j(cubes, cubesOfInterest, location, camera_distance, camera);
-    } else if(mode == MODE_HEIGHT_K) {
+    } else if (mode == MODE_HEIGHT_K) {
         process_mode_height_k(cubes, cubesOfInterest, location, camera_distance, camera);
     } else {
         return;
     }
-
-
-
-
 }
 
 void swap_plane(uint32_t *state, int initial, int updated) {
     for (int i = 0; i < 3; i++) {
-        uint32_t plane_id = ((*state << (32-6*(i+1)) >> 29));
-        if(plane_id == initial) {
+        uint32_t plane_id = ((*state << (32 - 6 * (i + 1)) >> 29));
+        if (plane_id == initial) {
             uint32_t mask = (1 << 3) - 1;
             mask = mask << (i * 6 + 3);
             mask = ~mask;
@@ -785,13 +777,13 @@ void swap_plane(uint32_t *state, int initial, int updated) {
 
 
 // I
-void rotate_side_plane_i(struct cube* cubes, int* order_of_planes, int starting_block,
+void rotate_side_plane_i(struct cube *cubes, int *order_of_planes, int starting_block,
                          int first_increment,
                          int second_increment,
                          int first_decrement) {
     // swap one-faced blocks
     uint32_t temp;
-    for(int i=starting_block; i > starting_block - DIMENSION + 2; i--) {
+    for (int i = starting_block; i > starting_block - DIMENSION + 2; i--) {
         int curr_block = i;
         temp = cubes[curr_block].currState;
 
@@ -860,13 +852,13 @@ void rotate_side_plane_i(struct cube* cubes, int* order_of_planes, int starting_
 
 
 // for some reason adding another parameter breaks it??
-void rotate_middle_plane_i(struct cube* cubes, int* order_of_planes, int starting_block,
-        int first_increment,
-        int second_increment,
-        int first_decrement) {
+void rotate_middle_plane_i(struct cube *cubes, int *order_of_planes, int starting_block,
+                           int first_increment,
+                           int second_increment,
+                           int first_decrement) {
     // swap one-faced blocks
     uint32_t temp;
-    for(int i=starting_block; i > starting_block - DIMENSION + 2; i--) {
+    for (int i = starting_block; i > starting_block - DIMENSION + 2; i--) {
         int curr_block = i;
         temp = cubes[curr_block].currState;
 
@@ -944,12 +936,12 @@ void rotate_mode_length_i(struct cube *cubes, int location) {
     int first_decrement;
     int order_of_planes[4];
 
-    if(location == 0) {
+    if (location == 0) {
         cubes_per_layer = DIMENSION * 4 - 4;
-        starting_block = DIMENSION-2;
+        starting_block = DIMENSION - 2;
 
         first_increment = 2;
-        second_increment = (DIMENSION -1) * (DIMENSION - 1);
+        second_increment = (DIMENSION - 1) * (DIMENSION - 1);
         first_decrement = -first_increment;
 
         order_of_planes[0] = 3;
@@ -960,12 +952,12 @@ void rotate_mode_length_i(struct cube *cubes, int location) {
         return;
     }
 
-    if(location == DIMENSION-1) {
+    if (location == DIMENSION - 1) {
         cubes_per_layer = DIMENSION * 4 - 4;
-        starting_block = DIMENSION*DIMENSION-1 + (DIMENSION-2) * cubes_per_layer-1 + DIMENSION;
+        starting_block = DIMENSION * DIMENSION - 1 + (DIMENSION - 2) * cubes_per_layer - 1 + DIMENSION;
 
         first_increment = 2;
-        second_increment = (DIMENSION -1) * (DIMENSION - 1);
+        second_increment = (DIMENSION - 1) * (DIMENSION - 1);
         first_decrement = -first_increment;
 
         order_of_planes[0] = 3;
@@ -977,7 +969,7 @@ void rotate_mode_length_i(struct cube *cubes, int location) {
     }
 
     cubes_per_layer = DIMENSION * 4 - 4;
-    starting_block = (location-1) * cubes_per_layer + DIMENSION * DIMENSION + DIMENSION - 2;
+    starting_block = (location - 1) * cubes_per_layer + DIMENSION * DIMENSION + DIMENSION - 2;
 
     first_increment = 2;
     second_increment = 2 * (DIMENSION - 3) + 3;
@@ -988,22 +980,18 @@ void rotate_mode_length_i(struct cube *cubes, int location) {
     order_of_planes[2] = 0;
     order_of_planes[3] = 5;
     rotate_middle_plane_i(cubes, order_of_planes, starting_block, first_increment, second_increment, first_decrement);
-
 }
-
-
-
 
 
 // J
 
-void rotate_middle_plane_height_j(struct cube* cubes, int* order_of_planes, int starting_block,
-                           int first_increment,
-                           int second_increment,
-                           int first_decrement) {
+void rotate_middle_plane_height_j(struct cube *cubes, int *order_of_planes, int starting_block,
+                                  int first_increment,
+                                  int second_increment,
+                                  int first_decrement) {
     // swap one-faced blocks
     uint32_t temp;
-    for(int i=starting_block; i > starting_block - DIMENSION + 2; i--) {
+    for (int i = starting_block; i > starting_block - DIMENSION + 2; i--) {
         int curr_block = i;
         temp = cubes[curr_block].currState;
 
@@ -1031,13 +1019,15 @@ void rotate_middle_plane_height_j(struct cube* cubes, int* order_of_planes, int 
 
         swap_plane(&cubes[next_block].currState, order_of_planes[3], order_of_planes[2]);
 
-        first_increment += 3;
-        second_increment -= 1;
-        first_decrement = -first_increment;
+        first_increment += 4 * (DIMENSION - 4) + 13;
+        second_increment += -first_increment + 2;
+        first_decrement += -first_increment;
     }
 
     // swap edge blocks
     int curr_block = starting_block - DIMENSION + 2;
+
+    first_decrement = -first_increment;
 
     temp = cubes[curr_block].currState;
 
@@ -1071,88 +1061,208 @@ void rotate_middle_plane_height_j(struct cube* cubes, int* order_of_planes, int 
     swap_plane(&cubes[next_block].currState, order_of_planes[0], order_of_planes[3]);
 }
 
+void load_cube_in_plane(struct cube *cubes, struct cube **select_cubes, int mode, int location) {
+
+    int i, j, k;
+
+    int count = 0;
+    int select_count = 0;
+
+    for (i = 0; i < DIMENSION; i++) {
+        for (j = 0; j < DIMENSION; j++) {
+            for (k = 0; k < DIMENSION; k++) {
+                if (i == 0 || i == DIMENSION - 1 ||
+                    j == 0 || j == DIMENSION - 1 ||
+                    k == 0 || k == DIMENSION - 1) {
+
+                    if (mode == MODE_WIDTH_J && j == location) {
+                        select_cubes[select_count] = &cubes[count];
+                        select_count++;
+                    }
+
+                    count++;
+                }
+            }
+        }
+    }
+}
+
+int get_num_active_planes(uint32_t state) {
+    int count = 0;
+    for (int i = 0; i < 3; i++) {
+        uint32_t plane_id = ((state << (32 - 6 * (i + 1)) >> 29));
+        if (plane_id != 7) {
+            count++;
+        }
+    }
+    return count;
+}
+
+int is_active_plane(uint32_t state, int plane_to_check) {
+    for (int i = 0; i < 3; i++) {
+        uint32_t plane_id = ((state << (32 - 6 * (i + 1)) >> 29));
+        if (plane_id == plane_to_check) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void reverseArray(struct cube** arr, int start, int end) {
+    struct cube *temp;
+    while (start < end) {
+        temp = arr[start];
+        arr[start] = arr[end];
+        arr[end] = temp;
+        start++;
+        end--;
+    }
+}
 
 void rotate_mode_height_j(struct cube *cubes, int location) {
-    // if location == 0 || location == DIMENSION - 1 need to rotate sides
+    int i, j, k;
+    int cubes_per_plane;
 
-    int cubes_per_layer;
-    int starting_block;
-    int first_increment;
-    int second_increment;
-    int first_decrement;
-    int order_of_planes[4];
-    order_of_planes[0] = 4;
-    order_of_planes[1] = 3;
-    order_of_planes[2] = 2;
-    order_of_planes[3] = 0;
+    Pair plane_order[4] = {
+            {4, 3},
+            {3, 2},
+            {2, 0},
+            {0, 4}};
 
-    if(location == 0) {
-        cubes_per_layer = DIMENSION * 4 - 4;
-        starting_block = DIMENSION-2;
-
-        first_increment = 2;
-        second_increment = (DIMENSION -1) * (DIMENSION - 1);
-        first_decrement = -first_increment;
-
-
-//        rotate_side_plane_height_j(cubes, order_of_planes, starting_block, first_increment, second_increment, first_decrement);
+    if (location == 0) {
+        cubes_per_plane = DIMENSION * DIMENSION;
         return;
     }
 
-    if(location == DIMENSION-1) {
-        cubes_per_layer = DIMENSION * 4 - 4;
-        starting_block = DIMENSION*DIMENSION-1 + (DIMENSION-2) * cubes_per_layer-1 + DIMENSION;
-
-        first_increment = 2;
-        second_increment = (DIMENSION -1) * (DIMENSION - 1);
-        first_decrement = -first_increment;
-
-//        rotate_side_plane_i(cubes, order_of_planes, starting_block, first_increment, second_increment, first_decrement);
+    else if (location == DIMENSION - 1) {
+        cubes_per_plane = DIMENSION * DIMENSION;
         return;
     }
 
-    cubes_per_layer = DIMENSION * 4 - 4;
-    starting_block = (location-1) * cubes_per_layer + DIMENSION * DIMENSION + DIMENSION - 2;
+    cubes_per_plane = DIMENSION * 4 - 4;
+    struct cube *select_cubes[cubes_per_plane];
 
-    first_increment = 2;
-    second_increment = 2 * (DIMENSION - 3) + 3;
-    first_decrement = -first_increment;
+    load_cube_in_plane(cubes, select_cubes, MODE_WIDTH_J, location);
 
-    rotate_middle_plane_i(cubes, order_of_planes, starting_block, first_increment, second_increment, first_decrement);
+    struct cube *grouped_cubes[4 * (DIMENSION - 1)];
+
+    //    for(i=0; i<4; i++) {
+    //        for(j=0; j<DIMENSION-1; j++) {
+    //            grouped_cubes[i][j] = NULL;
+    //        }
+    //    }
+
+    for (i = 0; i < 4; i++) {
+        int temp = 0;
+        for (j = 0; j < cubes_per_plane; j++) {
+            uint32_t currState = select_cubes[j]->currState;
+            int num_active_planes = get_num_active_planes(currState);
+            if (num_active_planes == 1 && is_active_plane(currState, plane_order[i].first)) {
+                grouped_cubes[i * (DIMENSION - 1) + temp] = select_cubes[j];
+                temp++;
+            }
+
+            if (num_active_planes == 2 && is_active_plane(currState, plane_order[i].first)
+                    && is_active_plane(currState, plane_order[i].second)) {
+                grouped_cubes[i * (DIMENSION - 1) + temp] = select_cubes[j];
+                temp++;
+            }
+        }
+    }
+
+    for(i=0; i<4; i++) {
+        if(get_num_active_planes(grouped_cubes[i * (DIMENSION-1)]->currState) > 1) {
+            reverseArray(grouped_cubes, i * (DIMENSION-1), i * (DIMENSION-1) + DIMENSION-1-1);
+        }
+    }
+
+    // MIDDLE PIECES
+    for (j = 0; j < DIMENSION - 1 - 1; j++) {
+
+//        uint32_t temp = grouped_cubes[i* (DIMENSION-1)]->currState;
+//        grouped_cubes[i * (DIMENSION-1)]->currState = grouped_cubes[(i+1) * (DIMENSION-1)]->currState;
+//        grouped_cubes[(i+1) * (DIMENSION-1)]->currState = temp;
+        uint32_t temp = grouped_cubes[(0* (DIMENSION - 1) + j)]->currState;
+
+
+        grouped_cubes[(0* (DIMENSION - 1) + j)]->currState = grouped_cubes[1 * (DIMENSION - 1) + j]->currState;
+        swap_plane(&(grouped_cubes[0 * (DIMENSION - 1) + j]->currState), plane_order[0].second,
+                   plane_order[0].first);
+
+        grouped_cubes[(1* (DIMENSION - 1) + j)]->currState = grouped_cubes[2 * (DIMENSION - 1) + j]->currState;
+        swap_plane(&(grouped_cubes[(1) * (DIMENSION - 1) + j]->currState), plane_order[1].second,
+                   plane_order[1].first);
+
+        grouped_cubes[(2* (DIMENSION - 1) + j)]->currState = grouped_cubes[3 * (DIMENSION - 1) + j]->currState;
+        swap_plane(&(grouped_cubes[(2) * (DIMENSION - 1) + j]->currState), plane_order[2].second,
+                   plane_order[2].first);
+
+        grouped_cubes[3 * (DIMENSION - 1) + j]->currState = temp;
+        swap_plane(&(grouped_cubes[(3) * (DIMENSION - 1) + j]->currState), plane_order[3].second,
+                   plane_order[3].first);
+    }
+
+    // EDGE PIECES
+    j = DIMENSION-1-1;
+
+    uint32_t temp = grouped_cubes[(0* (DIMENSION - 1) + j)]->currState;
+
+
+    grouped_cubes[(0* (DIMENSION - 1) + j)]->currState = grouped_cubes[1 * (DIMENSION - 1) + j]->currState;
+    swap_plane(&(grouped_cubes[0 * (DIMENSION - 1) + j]->currState), plane_order[0].second,
+               plane_order[0].first);
+    swap_plane(&(grouped_cubes[0 * (DIMENSION - 1) + j]->currState), plane_order[1].second,
+               plane_order[1].first);
+
+    grouped_cubes[(1* (DIMENSION - 1) + j)]->currState = grouped_cubes[2 * (DIMENSION - 1) + j]->currState;
+    swap_plane(&(grouped_cubes[(1) * (DIMENSION - 1) + j]->currState), plane_order[1].second,
+               plane_order[1].first);
+    swap_plane(&(grouped_cubes[(1) * (DIMENSION - 1) + j]->currState), plane_order[2].second,
+               plane_order[2].first);
+
+    grouped_cubes[(2* (DIMENSION - 1) + j)]->currState = grouped_cubes[3 * (DIMENSION - 1) + j]->currState;
+    swap_plane(&(grouped_cubes[(2) * (DIMENSION - 1) + j]->currState), plane_order[2].second,
+               plane_order[2].first);
+    swap_plane(&(grouped_cubes[(2) * (DIMENSION - 1) + j]->currState), plane_order[3].second,
+               plane_order[3].first);
+
+    grouped_cubes[3 * (DIMENSION - 1) + j]->currState = temp;
+    swap_plane(&(grouped_cubes[(3) * (DIMENSION - 1) + j]->currState), plane_order[3].second,
+               plane_order[3].first);
+    swap_plane(&(grouped_cubes[(3) * (DIMENSION - 1) + j]->currState), plane_order[0].second,
+               plane_order[0].first);
 
 }
 
 
 
 
-
-
-void resetFaces(struct cube* cubes, int num_cubes) {
+void resetFaces(struct cube *cubes, int num_cubes) {
 
     int i, j, k;
-    for(i=0; i<num_cubes; i++) {
+    for (i = 0; i < num_cubes; i++) {
         cubes[i].currState = 0xFFFFFFFF;
     }
 
     int planeOfInterest;
     int count = 0;
-    for(i=0; i<DIMENSION; i++) {
-        for(j=0; j<DIMENSION; j++) {
-            for(k=0; k<DIMENSION; k++) {
-                if(i == 0 || i == DIMENSION - 1 ||
-                   j == 0 || j == DIMENSION - 1 ||
-                   k == 0 || k == DIMENSION - 1) {
+    for (i = 0; i < DIMENSION; i++) {
+        for (j = 0; j < DIMENSION; j++) {
+            for (k = 0; k < DIMENSION; k++) {
+                if (i == 0 || i == DIMENSION - 1 ||
+                    j == 0 || j == DIMENSION - 1 ||
+                    k == 0 || k == DIMENSION - 1) {
                     int planeCount = 0;
-                    if(i == 0) {
-//                        planeOfInterest = 4;
+                    if (i == 0) {
+                        //                        planeOfInterest = 4;
                         planeOfInterest = 4;
 
                         load_default(&cubes[count].currState, planeOfInterest, planeCount);
                         planeCount++;
                     }
 
-                    if(i == DIMENSION - 1) {
-//                        planeOfInterest = 2;
+                    if (i == DIMENSION - 1) {
+                        //                        planeOfInterest = 2;
                         planeOfInterest = 2;
 
                         load_default(&cubes[count].currState, planeOfInterest, planeCount);
@@ -1160,31 +1270,31 @@ void resetFaces(struct cube* cubes, int num_cubes) {
                     }
 
 
-                    if(j == 0) {
-//                        planeOfInterest = 5;
+                    if (j == 0) {
+                        //                        planeOfInterest = 5;
                         planeOfInterest = 5;
 
                         load_default(&cubes[count].currState, planeOfInterest, planeCount);
                         planeCount++;
                     }
-                    if(j == DIMENSION - 1) {
-//                        planeOfInterest = 1;
+                    if (j == DIMENSION - 1) {
+                        //                        planeOfInterest = 1;
                         planeOfInterest = 1;
 
                         load_default(&cubes[count].currState, planeOfInterest, planeCount);
                         planeCount++;
                     }
 
-                    if(k == 0) {
-//                        planeOfInterest = 3;
+                    if (k == 0) {
+                        //                        planeOfInterest = 3;
                         planeOfInterest = 3;
 
                         load_default(&cubes[count].currState, planeOfInterest, planeCount);
                         planeCount++;
                     }
 
-                    if(k == DIMENSION - 1) {
-//                        planeOfInterest = 0;
+                    if (k == DIMENSION - 1) {
+                        //                        planeOfInterest = 0;
                         planeOfInterest = 0;
                         load_default(&cubes[count].currState, planeOfInterest, planeCount);
                     }
@@ -1211,20 +1321,24 @@ void resetFaces(struct cube* cubes, int num_cubes) {
  *      uint32_t *pixels: a 2D array containing the pixels to be drawn
  *          onto the screen.
  */
-uint32_t* render(int dt, float a, float b, float c, int dimension, int mode, int location, int toRotate) {
+uint32_t *render(int dt, float a, float b, float c, int dimension, int mode, int location, int toRotate) {
     int refresh = 0;
-    if(dimension != DIMENSION) {
+    if (dimension != DIMENSION) {
         refresh = 1;
     }
     DIMENSION = dimension;
-    int num_cubes = (DIMENSION == 1) ? 1 : DIMENSION * DIMENSION * DIMENSION - (DIMENSION-2) * (DIMENSION-2) * (DIMENSION-2);
+    int num_cubes = (DIMENSION == 1) ? 1 : DIMENSION * DIMENSION * DIMENSION - (DIMENSION - 2) * (DIMENSION - 2) * (DIMENSION - 2);
     struct cube cubes[num_cubes];
     struct cube translatedCubes[num_cubes];
-    if(refresh) {
-       resetFaces(cubes, num_cubes);
+    if (refresh) {
+        resetFaces(cubes, num_cubes);
     }
-    if(toRotate) {
-        rotate_mode_length_i(cubes, location);
+    if (toRotate) {
+        if (mode == MODE_LENGTH_I) {
+            rotate_mode_length_i(cubes, location);
+        } else if (mode == MODE_WIDTH_J) {
+            rotate_mode_height_j(cubes, location);
+        }
     }
 
     fill_screen(pixels, WIDTH, HEIGHT, BG_COLOR);
@@ -1233,9 +1347,9 @@ uint32_t* render(int dt, float a, float b, float c, int dimension, int mode, int
     B = b;
     C = c;
 
-    f_modulo(&A, 2*(float)PI);
-    f_modulo(&B, 2*(float)PI);
-    f_modulo(&C, 2*(float)PI);
+    f_modulo(&A, 2 * (float) PI);
+    f_modulo(&B, 2 * (float) PI);
+    f_modulo(&C, 2 * (float) PI);
 
     float magnitude = SCALE - GAP;
     float camera_distance = 200;
@@ -1246,7 +1360,7 @@ uint32_t* render(int dt, float a, float b, float c, int dimension, int mode, int
 
     generateCubes(cubes, translatedCubes, num_cubes, magnitude, camera_distance, colors);
 
-    for(int i=0; i<num_cubes; i++) {
+    for (int i = 0; i < num_cubes; i++) {
         draw_cube(pixels, WIDTH, HEIGHT, translatedCubes[i].points, camera, colors, translatedCubes[i].currState);
     }
 
@@ -1256,44 +1370,13 @@ uint32_t* render(int dt, float a, float b, float c, int dimension, int mode, int
 }
 
 
-
-
-void *memcpy(void *dest, const void *src, size_t n)
-{
-    for (size_t i = 0; i < n; i++)
-    {
-        ((char*)dest)[i] = ((char*)src)[i];
+void *memcpy(void *dest, const void *src, size_t n) {
+    for (size_t i = 0; i < n; i++) {
+        ((char *) dest)[i] = ((char *) src)[i];
     }
 }
 
-int main(void)
-{
-//    int num_cubes = (DIMENSION == 1) ? 1 : DIMENSION * DIMENSION * DIMENSION - (DIMENSION-2) * (DIMENSION-2) * (DIMENSION-2);
-//    struct cube cubes[num_cubes];
-//    struct cube translatedCubes[num_cubes];
-//    //if(dt == 0) {
-//    resetFaces(cubes, num_cubes);
-//    //}
-//
-//    f_modulo(&A, 2*(float)PI);
-//    f_modulo(&B, 2*(float)PI);
-//    f_modulo(&C, 2*(float)PI);
-//
-//    float magnitude = SCALE - GAP;
-//    float camera_distance = 200;
-//
-//    struct Point_3D camera = {0, 0, 0};
-//
-//    uint32_t colors[NUM_PLANES] = {BLUE, YELLOW, RED, GREEN, ORANGE, WHITE};
-//
-//    generateCubes(cubes, translatedCubes, num_cubes, magnitude, camera_distance, colors);
-//
-//    for(int i=0; i<num_cubes; i++) {
-//        draw_cube(pixels, WIDTH, HEIGHT, translatedCubes[i].points, camera, colors, translatedCubes[i].currState);
-//    }
-//
-//    rotate_mode_length_i(cubes, 7);
-
+int main(void) {
     render(1, 0, 0, 0, 4, 1, 1, 1);
 
     return 0;
