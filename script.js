@@ -14,8 +14,10 @@ let mode = 0;
 let dimension= 5;
 
 let toRotate= 0;
+let direction = 0;
 
-console.log(dt);
+let magnitude = 0.5
+
 
 let speed = 0.001;
 
@@ -51,18 +53,18 @@ async function startDemo() {
     document.addEventListener('keydown', (event) => {
         console.log("pA");
         if (event.key === 'w') {
-            A += 0.1;
+            A += magnitude;
             dt++;
         } else if (event.key === 's') {
-            A -= 0.1;
+            A -= magnitude;
         } else if (event.key === 'd') {
-            B += 0.1;
+            B += magnitude;
         } else if (event.key === 'a') {
-            B -= 0.1;
+            B -= magnitude;
         } else if (event.key === 'j') {
-            C += 0.1;
+            C += magnitude;
         } else if (event.key === 'k') {
-            C -= 0.1;
+            C -= magnitude;
         } else if (event.key === 'p') {
             if(!spinning) {
                 spinning = true;
@@ -95,14 +97,29 @@ async function startDemo() {
 
             // instance.exports.rotate_mode_length_i(1);
             toRotate = 1;
+            direction = 0;
         }
-        render(instance, dt, A, B, C, dimension, mode, loc, toRotate);
+        else if (event.key === 'R') {
+            console.log("rotate");
+            console.log(dt);
+
+            // instance.exports.rotate_mode_length_i(1);
+            toRotate = 1;
+            direction = 1;
+        }
+        else if (event.key === '-'){
+            dimension -= 1;
+        }
+        else if (event.key === '='){
+            dimension += 1;
+        }
+        render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction);
         toRotate = 0;
     });
 }
 
-function render(instance, dt, A, B, C, dimension, mode, loc, toRotate) {
-    const pixels = instance.exports.render(dt, A, B, C, dimension, mode, loc, toRotate);
+function render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction) {
+    const pixels = instance.exports.render(dt, A, B, C, dimension, mode, loc, toRotate, direction);
     const buffer = instance.exports.memory.buffer;
     const imageData = new ImageData(new Uint8ClampedArray(buffer, pixels, app.width * app.height * 4), app.width);
     ctx.putImageData(imageData, 0, 0);
