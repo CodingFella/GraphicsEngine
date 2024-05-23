@@ -65,7 +65,6 @@ struct plane {
 struct cube {
     struct Point_3D points[NUM_CORNERS];
     uint32_t currState;
-    int id;
 };
 
 typedef struct {
@@ -183,7 +182,6 @@ void draw_cube(uint32_t *canvas, int width, int height, struct Point_3D *points,
 
     convert_3D_to_2D(c_2D, width, height, points, camera);
 
-    // todo: replace last thing with BG_COLOR
     struct plane p0123 = {points[0], points[1], points[2], points[3],
                           c_2D[0], c_2D[1], c_2D[2], c_2D[3], BG_COLOR};
     struct plane p5140 = {points[5], points[1], points[4], points[0],
@@ -285,7 +283,7 @@ void f_modulo(float *x, float y) {
  *      No return value. Computed corners are placed into the cube pointer
  *          that was passed in.
  */
-void generateCorners(struct cube *cube, float magnitude, float camera_distance, float x_offset, float y_offset, float z_offset) {
+void generateCorners(struct cube *cube, float magnitude, float camera_distance, float x_offset, float y_offset, float z_offset, int mode, float angle) {
 
     float x_factor = -1;
     float y_factor = -1;
@@ -302,7 +300,31 @@ void generateCorners(struct cube *cube, float magnitude, float camera_distance, 
         newPoint.y = y_factor * magnitude + y_offset;
         newPoint.z = camera_distance + z_factor * magnitude + z_offset;
 
-        cube->points[i] = newPoint;
+        if(angle == 0) {
+            cube->points[i] = newPoint;
+        }
+        else {
+            struct Point_3D rotatedNewPoint;
+            float rad = angle * PI / 180.0;
+            if(mode == MODE_LENGTH_I) {
+                rotatedNewPoint.x = newPoint.x;
+                rotatedNewPoint.y = newPoint.y * cos(rad) - (newPoint.z-camera_distance) * sin(rad);
+                rotatedNewPoint.z = newPoint.y * sin(rad) + (newPoint.z-camera_distance) * cos(rad) + camera_distance;
+                cube->points[i] = rotatedNewPoint;
+            } else if(mode == MODE_WIDTH_J) {
+                rotatedNewPoint.x = newPoint.x * cos(rad) + (newPoint.z-camera_distance) * sin(rad);
+                rotatedNewPoint.y = newPoint.y;
+                rotatedNewPoint.z = - newPoint.x * sin(rad) + (newPoint.z-camera_distance) * cos(rad) + camera_distance;
+                cube->points[i] = rotatedNewPoint;
+            } else if(mode == MODE_HEIGHT_K) {
+                rotatedNewPoint.x = newPoint.x * cos(rad) - newPoint.y * sin(rad);
+                rotatedNewPoint.y = newPoint.x * sin(rad) + newPoint.y * cos(rad);
+                rotatedNewPoint.z = newPoint.z;
+                cube->points[i] = rotatedNewPoint;
+            }
+
+        }
+
     }
 }
 
@@ -354,7 +376,7 @@ void load_default(uint32_t *curr_cube, int planeOfInterest, int plane_count) {
  *      No return value. Computed cubes are stored in cubes and the proper image is
  *          drawn into the canvas.
  */
-struct cube *generateCubes(struct cube *cubes, struct cube *translatedCubes, int num_cubes, float magnitude, float camera_distance, uint32_t *colors) {
+struct cube *generateCubes(struct cube *cubes, struct cube *translatedCubes, int num_cubes, float magnitude, float camera_distance, uint32_t *colors, int mode, int location, int angle) {
     int i, j, k;
 
     const int cubes_rows = DIMENSION;
@@ -384,8 +406,26 @@ struct cube *generateCubes(struct cube *cubes, struct cube *translatedCubes, int
                 if (i == 0 || i == cubes_rows - 1 ||
                     j == 0 || j == cubes_cols - 1 ||
                     k == 0 || k == cubes_height - 1) {
-                    generateCorners(&translatedCubes[count], magnitude, camera_distance, x_offset + (spacing * (float) i),
-                                    y_offset + (spacing * (float) j), z_offset + (spacing * (float) k));
+                    if(mode == MODE_LENGTH_I && i == location) {
+                        generateCorners(&translatedCubes[count], magnitude, camera_distance,
+                                        x_offset + (spacing * (float) i),
+                                        y_offset + (spacing * (float) j), z_offset + (spacing * (float) k), mode, angle);
+                    }
+                    else if(mode == MODE_WIDTH_J && j == location) {
+                        generateCorners(&translatedCubes[count], magnitude, camera_distance,
+                                        x_offset + (spacing * (float) i),
+                                        y_offset + (spacing * (float) j), z_offset + (spacing * (float) k), mode, angle);
+                    }
+                    else if(mode == MODE_HEIGHT_K && k == location) {
+                        generateCorners(&translatedCubes[count], magnitude, camera_distance,
+                                        x_offset + (spacing * (float) i),
+                                        y_offset + (spacing * (float) j), z_offset + (spacing * (float) k), mode, angle);
+                    }
+
+                    else {
+                        generateCorners(&translatedCubes[count], magnitude, camera_distance, x_offset + (spacing * (float) i),
+                                            y_offset + (spacing * (float) j), z_offset + (spacing * (float) k), mode, 0);
+                    }
 
                     count++;
                 }
@@ -1156,7 +1196,6 @@ void resetFaces(struct cube *cubes, int num_cubes) {
                         planeOfInterest = 0;
                         load_default(&cubes[count].currState, planeOfInterest, planeCount);
                     }
-                    cubes[count].id = count;
                     count++;
                 }
             }
@@ -1180,7 +1219,7 @@ void resetFaces(struct cube *cubes, int num_cubes) {
  *      uint32_t *pixels: a 2D array containing the pixels to be drawn
  *          onto the screen.
  */
-uint32_t *render(int dt, float a, float b, float c, int dimension, int mode, int location, int toRotate, int direction) {
+uint32_t *render(int dt, float a, float b, float c, int dimension, int mode, int location, int toRotate, int direction, int angle) {
     int refresh = 0;
     if (dimension != DIMENSION) {
         refresh = 1;
@@ -1190,6 +1229,12 @@ uint32_t *render(int dt, float a, float b, float c, int dimension, int mode, int
     struct cube cubes[num_cubes];
     struct cube translatedCubes[num_cubes];
 
+    if(mode == MODE_WIDTH_J) {
+        angle = -angle;
+    }
+    if(mode == MODE_HEIGHT_K) {
+        angle = -angle;
+    }
     if (refresh) {
         resetFaces(cubes, num_cubes);
     }
@@ -1263,13 +1308,15 @@ uint32_t *render(int dt, float a, float b, float c, int dimension, int mode, int
 
     uint32_t colors[NUM_PLANES] = {BLUE, YELLOW, RED, GREEN, ORANGE, WHITE};
 
-    generateCubes(cubes, translatedCubes, num_cubes, magnitude, camera_distance, colors);
+    generateCubes(cubes, translatedCubes, num_cubes, magnitude, camera_distance, colors, mode, location, angle);
 
     for (int i = 0; i < num_cubes; i++) {
         draw_cube(pixels, WIDTH, HEIGHT, translatedCubes[i].points, camera, colors, translatedCubes[i].currState);
     }
 
-    generateIndicator(cubes, mode, location, camera_distance, camera);
+    if(angle == 0) {
+        generateIndicator(cubes, mode, location, camera_distance, camera);
+    }
 
     return pixels;
 }
@@ -1279,11 +1326,13 @@ void *memcpy(void *dest, const void *src, size_t n) {
     for (size_t i = 0; i < n; i++) {
         ((char *) dest)[i] = ((char *) src)[i];
     }
+    return NULL;
 }
 
+// for debugging
 int main(void) {
-    render(1, 0, 0, 0, 4, MODE_LENGTH_I, 0, 1, 0);
-    render(1, 0, 0, 0, 4, MODE_LENGTH_I, 0, 1, 0);
+//    render(1, 0, 0, 0, 4, MODE_LENGTH_I, 0, 1, 0);
+//    render(1, 0, 0, 0, 4, MODE_LENGTH_I, 0, 1, 0);
 //    render(1, 0, 0, 0, 4, MODE_LENGTH_I, 0, 1);
 
     return 0;

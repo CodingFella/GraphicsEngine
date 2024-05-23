@@ -11,13 +11,15 @@ let C = 0.0;
 
 let dt = 0;
 let mode = 0;
-let dimension= 5;
+let dimension= 3;
 
 let toRotate= 0;
 let direction = 0;
 
 let magnitude = 0.5
 
+let angleJump = 20;
+let turnSpeed = 10;
 
 let speed = 0.001;
 
@@ -37,7 +39,6 @@ function spin(instance, dt) {
         A += speed;
         B += speed;
         C += speed;
-        // console.log(dt);
         render(instance, dt, A, B, C, dimension, mode, loc);
     }, 25); // Interval set to 1000ms (1 second)
 }
@@ -50,8 +51,7 @@ async function startDemo() {
 
 
 
-    document.addEventListener('keydown', (event) => {
-        console.log("pA");
+    document.addEventListener('keydown', async (event) => {
         if (event.key === 'w') {
             A += magnitude;
             dt++;
@@ -66,60 +66,63 @@ async function startDemo() {
         } else if (event.key === 'k') {
             C -= magnitude;
         } else if (event.key === 'p') {
-            if(!spinning) {
+            if (!spinning) {
                 spinning = true;
                 spin(instance, dt);
-            }
-            else {
+            } else {
                 spinning = false;
                 clearInterval(intervalID);
             }
-        }
-        else if (event.key === 'i') {
+        } else if (event.key === 'i') {
             speed *= 2;
-        }
-        else if (event.key === 'o') {
+        } else if (event.key === 'o') {
             speed /= 2;
-        }
-
-        else if (event.key === ',') {
-            if(loc < dimension-1) loc += 1;
-        }
-        else if (event.key === '.') {
-            if(loc > 0) loc -= 1;
-        }
-        else if (event.key === 'm') {
+        } else if (event.key === ',') {
+            if (loc < dimension - 1) loc += 1;
+        } else if (event.key === '.') {
+            if (loc > 0) loc -= 1;
+        } else if (event.key === 'm') {
             mode = (mode + 1) % 3;
-        }
-        else if (event.key === 'r') {
-            console.log("rotate");
-            console.log(dt);
-
-            // instance.exports.rotate_mode_length_i(1);
+        } else if (event.key === 'r') {
+            for (let i = 1; i < 90; i += angleJump){
+                render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction, i);
+                await new Promise(resolve => setTimeout(resolve, turnSpeed));
+            }
             toRotate = 1;
             direction = 0;
-        }
-        else if (event.key === 'R') {
-            console.log("rotate");
-            console.log(dt);
-
-            // instance.exports.rotate_mode_length_i(1);
+        } else if (event.key === 'R') {
+            for (let i = -1; i > -90; i -= angleJump){
+                render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction, i);
+                await new Promise(resolve => setTimeout(resolve, turnSpeed));
+            }
             toRotate = 1;
             direction = 1;
-        }
-        else if (event.key === '-'){
+        } else if (event.key === '-') {
             dimension -= 1;
-        }
-        else if (event.key === '='){
+        } else if (event.key === '=') {
             dimension += 1;
+        } else if (event.key === 'S') {
+            await scramble(instance);
         }
-        render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction);
+        render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction, 0);
         toRotate = 0;
     });
 }
 
-function render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction) {
-    const pixels = instance.exports.render(dt, A, B, C, dimension, mode, loc, toRotate, direction);
+function getRandomInt(max) {
+    return Math.floor(Math.random() * max);
+}
+async function scramble(instance) {
+    for(let i=0; i<100; i++) {
+        let rand_mode = getRandomInt(3);
+        let rand_loc = getRandomInt(dimension);
+        render(instance, dt, A, B, C, dimension, rand_mode, rand_loc, 1, direction, 0);
+        await new Promise(resolve => setTimeout(resolve, turnSpeed));
+    }
+}
+
+function render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction, angle) {
+    const pixels = instance.exports.render(dt, A, B, C, dimension, mode, loc, toRotate, direction, angle);
     const buffer = instance.exports.memory.buffer;
     const imageData = new ImageData(new Uint8ClampedArray(buffer, pixels, app.width * app.height * 4), app.width);
     ctx.putImageData(imageData, 0, 0);
