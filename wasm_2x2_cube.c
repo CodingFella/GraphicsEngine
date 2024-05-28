@@ -12,16 +12,13 @@
 #define HEIGHT 600
 
 #define NUM_PLANES 6
-#define PLANE_POINTS 4
 #define NUM_CORNERS 8
 
-// 1.2 0.1 is nice
+// 1.2 0.13 is nice
 #define SCALE 1.2
-#define GAP 0.15
+#define GAP (0.13)
 
 #define BG_COLOR BLACK
-
-//#define DIMENSION 8
 
 #define MODE_LENGTH_I 0
 #define MODE_WIDTH_J 1
@@ -30,15 +27,10 @@
 #define FLT_MAX 3.402823466e+38F /* max value */
 #define FLT_MIN (-FLT_MAX)       /* min positive value */
 
-// order goes as this: p0123, p5140, p4062, p5476, p5173, p7362
-
-
 int DIMENSION = 2;
 
 float A, B, C;
 static uint32_t pixels[WIDTH * HEIGHT];
-//static uint32_t currState[MAX_CUBES];
-
 
 struct Point_3D {
     float x, y, z;
@@ -72,10 +64,36 @@ typedef struct {
     int second;
 } Pair;
 
+int get_num_active_planes(uint32_t state);
+
+/*
+ *  Function:   get_average_z
+ *  -------------------------
+ *  Given a plane as input, it finds the average of each corner's z values, so it can know
+ *      if it is in front or behind in relation to the other planes
+ *
+ *  Input param:
+ *      struct plane input
+ *
+ *  Return:
+ *      Returns the average z value
+ */
 float get_average_z(struct plane input) {
     return (input.pointA.z + input.pointB.z + input.pointC.z + input.pointD.z) / (float) NUM_PLANES;
 }
 
+/*
+ *  Function:   get_average_z_corners
+ *  ---------------------------------
+ *  Given a Point_3D as input, it finds the average of each corner's z values, so it can know
+ *      if it is in front or behind in relation to the other cubes
+ *
+ *  Input param:
+ *      struct Point_3D *input
+ *
+ *  Return:
+ *      Returns the average z value
+ */
 float get_average_z_corners(struct Point_3D *input) {
     float sum = 0;
     for (int i = 0; i < NUM_CORNERS; i++) {
@@ -84,7 +102,22 @@ float get_average_z_corners(struct Point_3D *input) {
     return sum;
 }
 
-// todo: write comments
+/*
+ *  Function:   draw_planes
+ *  -----------------------
+ *  Given an array of planes, it will draw the planes on the canvas in the correct
+ *      order of back to front by sorting the planes by its z value.
+ *
+ *  Input params:
+ *      uint32_t *canvas:       array of pixels on screen
+ *      int width:              width of canvas
+ *      int height:             height of canvas
+ *      struct plane *p:        array of planes to be drawn
+ *      int count:              number of planes (size of struct plane *p)
+ *
+ *  Return:
+ *      No return value. Places pixel into canvas.
+ */
 void draw_planes(uint32_t *canvas, int width, int height,
                  struct plane *p, int count) {
     // sort planes based on average z value
@@ -107,24 +140,29 @@ void draw_planes(uint32_t *canvas, int width, int height,
     }
 
     // paint accordingly
-    for (i = 3; i < 6; i++) {
-        fill_triangle(canvas, width, height,
-                      (int) (p[i].s_pointA.x + 0.5), (int) (p[i].s_pointA.y + 0.5),
-                      (int) (p[i].s_pointB.x + 0.5), (int) (p[i].s_pointB.y + 0.5),
-                      (int) (p[i].s_pointC.x + 0.5), (int) (p[i].s_pointC.y + 0.5),
-                      p[i].color);
+    for (i = count/2; i < count; i++) {
+        if(GAP == 0 && p[i].color == BG_COLOR) {
+            continue;
+        }
+        else {
+            fill_triangle(canvas, width, height,
+                          (int) (p[i].s_pointA.x + 0.5), (int) (p[i].s_pointA.y + 0.5),
+                          (int) (p[i].s_pointB.x + 0.5), (int) (p[i].s_pointB.y + 0.5),
+                          (int) (p[i].s_pointC.x + 0.5), (int) (p[i].s_pointC.y + 0.5),
+                          p[i].color);
 
-        fill_triangle(canvas, width, height,
-                      (int) (p[i].s_pointD.x + 0.5), (int) (p[i].s_pointD.y + 0.5),
-                      (int) (p[i].s_pointB.x + 0.5), (int) (p[i].s_pointB.y + 0.5),
-                      (int) (p[i].s_pointC.x + 0.5), (int) (p[i].s_pointC.y + 0.5),
-                      p[i].color);
+            fill_triangle(canvas, width, height,
+                          (int) (p[i].s_pointD.x + 0.5), (int) (p[i].s_pointD.y + 0.5),
+                          (int) (p[i].s_pointB.x + 0.5), (int) (p[i].s_pointB.y + 0.5),
+                          (int) (p[i].s_pointC.x + 0.5), (int) (p[i].s_pointC.y + 0.5),
+                          p[i].color);
+        }
     }
 }
 
 /*
  *  Function:   convert_3D_to_2D
- *  ---------------------
+ *  ----------------------------
  *  Given the dimensions of the canvas and the set of 3D points, relative to the camera,
  *      it converts the 3D coordinates and places its equivalent 2D points into the 2D
  *      array.
@@ -177,7 +215,7 @@ void convert_3D_to_2D(struct Point_2D *point2D, int width, int height, struct Po
  *          drawn into the canvas.
  */
 void draw_cube(uint32_t *canvas, int width, int height, struct Point_3D *points,
-               struct Point_3D camera, uint32_t *colors, uint32_t curr_color) {
+               struct Point_3D camera, const uint32_t *colors, uint32_t curr_color) {
     struct Point_2D c_2D[NUM_CORNERS];
 
     convert_3D_to_2D(c_2D, width, height, points, camera);
@@ -205,6 +243,12 @@ void draw_cube(uint32_t *canvas, int width, int height, struct Point_3D *points,
         }
     }
 
+    if(DIMENSION == 1) {
+        for (int i = 0; i < NUM_PLANES; i++) {
+            planes[i].color = colors[i];
+        }
+    }
+
     draw_planes(canvas, WIDTH, HEIGHT, planes, NUM_PLANES);
 }
 
@@ -229,13 +273,11 @@ float calculateX(float i, float j, float k) {
     return j * sin(A) * sin(B) * cos(C) - k * cos(A) * sin(B) * cos(C) +
            j * cos(A) * sin(C) + k * sin(A) * sin(C) + i * cos(B) * cos(C);
 }
-
 float calculateY(float i, float j, float k) {
     return j * cos(A) * cos(C) + k * sin(A) * cos(C) -
            j * sin(A) * sin(B) * sin(C) + k * cos(A) * sin(B) * sin(C) -
            i * cos(B) * sin(C);
 }
-
 float calculateZ(float i, float j, float k) {
     return k * cos(A) * cos(B) - j * sin(A) * cos(B) + i * sin(B);
 }
@@ -328,6 +370,18 @@ void generateCorners(struct cube *cube, float magnitude, float camera_distance, 
     }
 }
 
+/*
+ *  Function:    copy_cube
+ *  ----------------------
+ *  Given destination and source, copies fields from source to destination.
+ *
+ *  Input params:
+ *      struct cube *dest:      pointer to destination cube (paste)
+ *      struct cube *src:       pointer to source cube (copy)
+ *
+ *  Return:
+ *      No return value. Copied fields go directly into *dest.
+ */
 void copy_cube(struct cube *dest, struct cube *src) {
     for (int i = 0; i < NUM_CORNERS; i++) {
         dest->points[i] = src->points[i];
@@ -335,12 +389,40 @@ void copy_cube(struct cube *dest, struct cube *src) {
     //dest->currState = src->currState;
 }
 
+/*
+ *  Function:    copy_3D_point
+ *  --------------------------
+ *  Given destination and source, copies fields from source to destination.
+ *
+ *  Input params:
+ *      struct Point_3D *dest:  pointer to destination cube (paste)
+ *      struct Point_3D *src:   pointer to source cube (copy)
+ *
+ *  Return:
+ *      No return value. Copied fields go directly into *dest.
+ */
 void copy_3D_point(struct Point_3D *dest, struct Point_3D *src) {
     dest->x = src->x;
     dest->y = src->y;
     dest->z = src->z;
 }
 
+/*
+ *  Function:    load_default
+ *  -------------------------
+ *  Given the current cube, loads its current state based on the default, solved cube.
+ *      Using bit-masking and binary operations, it will modify the bits to make it
+ *      store the correct values.
+ *
+ *  Input params:
+ *      uint32_t *curr_cube:    pointer to current cube whose current state is being set
+ *      int planeOfInterest:    plane to set
+ *      int plane_count:        used to find amount of offset for bitmask to work. each one can
+ *                                  have up to 3 planes
+ *
+ *  Return:
+ *      No return value. Default current state goes directly into *curr_cube
+ */
 void load_default(uint32_t *curr_cube, int planeOfInterest, int plane_count) {
     // clear out portion
     uint32_t mask = (1 << 6) - 1;
@@ -359,7 +441,7 @@ void load_default(uint32_t *curr_cube, int planeOfInterest, int plane_count) {
 
 /*
  *  Function:    generateCubes
- *  -------------------
+ *  --------------------------
  *  given the number of cubes, magnitude, and camera distance, this function generates
  *      the correct corner coordinates for each cube, finds the active planes (i.e.
  *      corner cube has 3 active ones, edges have 2, and faces have 1). Lastly, it
@@ -376,12 +458,12 @@ void load_default(uint32_t *curr_cube, int planeOfInterest, int plane_count) {
  *      No return value. Computed cubes are stored in cubes and the proper image is
  *          drawn into the canvas.
  */
-struct cube *generateCubes(struct cube *cubes, struct cube *translatedCubes, int num_cubes, float magnitude, float camera_distance, uint32_t *colors, int mode, int location, int angle) {
+struct cube *generateCubes(struct cube *cubes, struct cube *translatedCubes, int num_cubes, float magnitude, float camera_distance, int mode, int location, float angle) {
     int i, j, k;
 
     const int cubes_rows = DIMENSION;
-    int cubes_cols = DIMENSION;
-    int cubes_height = DIMENSION;
+    const int cubes_cols = DIMENSION;
+    const int cubes_height = DIMENSION;
 
 
     for (i = 0; i < num_cubes; i++) {
@@ -393,9 +475,10 @@ struct cube *generateCubes(struct cube *cubes, struct cube *translatedCubes, int
 
     float spacing = (float) (SCALE * 2);
 
-    float x_offset = -spacing * ((DIMENSION - 1) / (float) 2);
-    float y_offset = -spacing * ((DIMENSION - 1) / (float) 2);
-    float z_offset = -spacing * ((DIMENSION - 1) / (float) 2);
+    float x_offset = -spacing * ((float)(DIMENSION - 1) / (float) 2);
+    float y_offset = -spacing * ((float)(DIMENSION - 1) / (float) 2);
+    float z_offset = -spacing * ((float)(DIMENSION - 1) / (float) 2);
+
     int count = 0;
 
 
@@ -406,23 +489,11 @@ struct cube *generateCubes(struct cube *cubes, struct cube *translatedCubes, int
                 if (i == 0 || i == cubes_rows - 1 ||
                     j == 0 || j == cubes_cols - 1 ||
                     k == 0 || k == cubes_height - 1) {
-                    if(mode == MODE_LENGTH_I && i == location) {
+                    if(mode == MODE_LENGTH_I && i == location || mode == MODE_WIDTH_J && j == location || mode == MODE_HEIGHT_K && k == location) {
                         generateCorners(&translatedCubes[count], magnitude, camera_distance,
                                         x_offset + (spacing * (float) i),
                                         y_offset + (spacing * (float) j), z_offset + (spacing * (float) k), mode, angle);
-                    }
-                    else if(mode == MODE_WIDTH_J && j == location) {
-                        generateCorners(&translatedCubes[count], magnitude, camera_distance,
-                                        x_offset + (spacing * (float) i),
-                                        y_offset + (spacing * (float) j), z_offset + (spacing * (float) k), mode, angle);
-                    }
-                    else if(mode == MODE_HEIGHT_K && k == location) {
-                        generateCorners(&translatedCubes[count], magnitude, camera_distance,
-                                        x_offset + (spacing * (float) i),
-                                        y_offset + (spacing * (float) j), z_offset + (spacing * (float) k), mode, angle);
-                    }
-
-                    else {
+                    } else {
                         generateCorners(&translatedCubes[count], magnitude, camera_distance, x_offset + (spacing * (float) i),
                                             y_offset + (spacing * (float) j), z_offset + (spacing * (float) k), mode, 0);
                     }
@@ -801,6 +872,20 @@ void generateIndicator(struct cube *cubes, int mode, int location, float camera_
     }
 }
 
+
+/*
+ *  Function:    swap_plane
+ *  -----------------------
+ *  Given the current state, it will change any initial plane with the new update value
+ *
+ *  Input params:
+ *      uint32_t *state:    pointer to current state to modify
+ *      int initial:        value of initial state
+ *      int updated:        value to replace initial state
+ *
+ *  Return:
+ *      No return value. Update value is change directly to *state.
+ */
 void swap_plane(uint32_t *state, int initial, int updated) {
     for (int i = 0; i < 4; i++) {
         uint32_t plane_id = ((*state << (32 - 6 * (i + 1)) >> 29));
@@ -816,9 +901,20 @@ void swap_plane(uint32_t *state, int initial, int updated) {
     }
 }
 
-
-//#include <stdio.h>
-
+/*
+ *  Function:    load_cube_in_plane
+ *  -------------------------------
+ *  Loads cubes in a specified plane into a separate pointer of pointers to cubes
+ *
+ *  Input params:
+ *      struct cube *cubes:         array of cubes
+ *      struct cube **select_cubes: array of pointers to cubes in specified plane
+ *      int mode:                   axis (in i, j, or k direction)
+ *      int location:
+ *
+ *  Return:
+ *      No return value. Update value is change directly to *state.
+ */
 void load_cube_in_plane(struct cube *cubes, struct cube **select_cubes, int mode, int location) {
 
     int i, j, k;
@@ -836,7 +932,6 @@ void load_cube_in_plane(struct cube *cubes, struct cube **select_cubes, int mode
                     if (mode == MODE_LENGTH_I && i == location) {
                         select_cubes[select_count] = &cubes[count];
                         select_count++;
-//                        printf("%d", count);
                     }
 
                     if (mode == MODE_WIDTH_J && j == location) {
@@ -867,6 +962,7 @@ int get_num_active_planes(uint32_t state) {
     return count;
 }
 
+
 int is_active_plane(uint32_t state, int plane_to_check) {
     for (int i = 0; i < 3; i++) {
         uint32_t plane_id = ((state << (32 - 6 * (i + 1)) >> 29));
@@ -889,7 +985,7 @@ void reverseArray(struct cube** arr, int start, int end) {
 }
 
 void rotate_sides(struct cube **select_cubes, Pair *plane_order, int cubes_per_plane) {
-    int i, j, k;
+    int i, j;
     struct cube *grouped_cubes[4 * (DIMENSION - 1)];
 
     for (i = 0; i < 4; i++) {
@@ -919,9 +1015,6 @@ void rotate_sides(struct cube **select_cubes, Pair *plane_order, int cubes_per_p
     // MIDDLE PIECES
     for (j = 0; j < DIMENSION - 1 - 1; j++) {
 
-//        uint32_t temp = grouped_cubes[i* (DIMENSION-1)]->currState;
-//        grouped_cubes[i * (DIMENSION-1)]->currState = grouped_cubes[(i+1) * (DIMENSION-1)]->currState;
-//        grouped_cubes[(i+1) * (DIMENSION-1)]->currState = temp;
         uint32_t temp = grouped_cubes[(0* (DIMENSION - 1) + j)]->currState;
 
 
@@ -974,7 +1067,7 @@ void rotate_sides(struct cube **select_cubes, Pair *plane_order, int cubes_per_p
 }
 
 void rotate_edges(struct cube **select_cubes, Pair *plane_order, int cubes_per_plane) {
-    int i, j, k;
+    int i, j;
     struct cube *grouped_cubes[4 * (DIMENSION - 1)];
     int count = 0;
     for (i = 0; i < 4; i++) {
@@ -1008,7 +1101,6 @@ void rotate_edges(struct cube **select_cubes, Pair *plane_order, int cubes_per_p
     for (j = 0; j < DIMENSION - 1-1; j++) {
 
         uint32_t temp = grouped_cubes[(0 * (DIMENSION - 1) + j)]->currState;
-
 
         grouped_cubes[(0 * (DIMENSION - 1) + j)]->currState = grouped_cubes[1 * (DIMENSION - 1) + j]->currState;
         swap_plane(&(grouped_cubes[0 * (DIMENSION - 1) + j]->currState), plane_order[0].second,
@@ -1061,7 +1153,7 @@ void rotate_edges(struct cube **select_cubes, Pair *plane_order, int cubes_per_p
 }
 
 void rotate_middle(struct cube **select_cubes, int cubes_per_plane, int direction) {
-    int i, j, k;
+    int i, j;
     int count = 0;
     int num_cubes = cubes_per_plane - 4 * (DIMENSION - 1);
     struct cube *grouped_cubes[num_cubes];
@@ -1130,13 +1222,23 @@ void rotate(struct cube *cubes, int mode, int location, Pair *plane_order, int d
         load_cube_in_plane(cubes, select_cubes, mode, location);
         rotate_sides(select_cubes, plane_order, cubes_per_plane);
     }
-
 }
 
 
-
+/*
+ *  Function:    resetFaces
+ *  -----------------------
+ *  Sets all cubes to default, solved state
+ *
+ *  Input params:
+ *      struct cube *cubes:     pointer to every cube that makes the
+ *      int num_cubes:
+ *
+ *  Return:
+ *      uint32_t *pixels: a 2D array containing the pixels to be drawn
+ *          onto the screen.
+ */
 void resetFaces(struct cube *cubes, int num_cubes) {
-
     int i, j, k;
     for (i = 0; i < num_cubes; i++) {
         cubes[i].currState = 0xFFFFFFFF;
@@ -1152,7 +1254,6 @@ void resetFaces(struct cube *cubes, int num_cubes) {
                     k == 0 || k == DIMENSION - 1) {
                     int planeCount = 0;
                     if (i == 0) {
-                        //                        planeOfInterest = 4;
                         planeOfInterest = 4;
 
                         load_default(&cubes[count].currState, planeOfInterest, planeCount);
@@ -1160,7 +1261,6 @@ void resetFaces(struct cube *cubes, int num_cubes) {
                     }
 
                     if (i == DIMENSION - 1) {
-                        //                        planeOfInterest = 2;
                         planeOfInterest = 2;
 
                         load_default(&cubes[count].currState, planeOfInterest, planeCount);
@@ -1169,14 +1269,12 @@ void resetFaces(struct cube *cubes, int num_cubes) {
 
 
                     if (j == 0) {
-                        //                        planeOfInterest = 5;
                         planeOfInterest = 5;
 
                         load_default(&cubes[count].currState, planeOfInterest, planeCount);
                         planeCount++;
                     }
                     if (j == DIMENSION - 1) {
-                        //                        planeOfInterest = 1;
                         planeOfInterest = 1;
 
                         load_default(&cubes[count].currState, planeOfInterest, planeCount);
@@ -1184,7 +1282,6 @@ void resetFaces(struct cube *cubes, int num_cubes) {
                     }
 
                     if (k == 0) {
-                        //                        planeOfInterest = 3;
                         planeOfInterest = 3;
 
                         load_default(&cubes[count].currState, planeOfInterest, planeCount);
@@ -1192,7 +1289,6 @@ void resetFaces(struct cube *cubes, int num_cubes) {
                     }
 
                     if (k == DIMENSION - 1) {
-                        //                        planeOfInterest = 0;
                         planeOfInterest = 0;
                         load_default(&cubes[count].currState, planeOfInterest, planeCount);
                     }
@@ -1234,6 +1330,7 @@ uint32_t *render(int dt, float a, float b, float c, int dimension, int mode, int
     }
     if(mode == MODE_HEIGHT_K) {
         angle = -angle;
+        direction = !direction;
     }
     if (refresh) {
         resetFaces(cubes, num_cubes);
@@ -1308,7 +1405,7 @@ uint32_t *render(int dt, float a, float b, float c, int dimension, int mode, int
 
     uint32_t colors[NUM_PLANES] = {BLUE, YELLOW, RED, GREEN, ORANGE, WHITE};
 
-    generateCubes(cubes, translatedCubes, num_cubes, magnitude, camera_distance, colors, mode, location, angle);
+    generateCubes(cubes, translatedCubes, num_cubes, magnitude, camera_distance, mode, location, angle);
 
     for (int i = 0; i < num_cubes; i++) {
         draw_cube(pixels, WIDTH, HEIGHT, translatedCubes[i].points, camera, colors, translatedCubes[i].currState);

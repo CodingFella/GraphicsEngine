@@ -25,6 +25,8 @@ let speed = 0.001;
 
 let spinning = false;
 
+let isRotating = false;
+
 let loc = 0;
 
 const MAX_DIMENSION = 10;
@@ -38,7 +40,7 @@ function spin(instance, dt) {
         dt += 1; // Increment dt by 1 every second
         A += speed;
         B += speed;
-        C += speed;
+        C += speed/4;
         render(instance, dt, A, B, C, dimension, mode, loc);
     }, 25); // Interval set to 1000ms (1 second)
 }
@@ -52,6 +54,11 @@ async function startDemo() {
 
 
     document.addEventListener('keydown', async (event) => {
+
+        // if(isRotating) {
+        //     return;
+        // }
+
         if (event.key === 'w') {
             A += magnitude;
             dt++;
@@ -84,25 +91,44 @@ async function startDemo() {
         } else if (event.key === 'm') {
             mode = (mode + 1) % 3;
         } else if (event.key === 'r') {
+            if(dimension === 1) {
+                return;
+            }
+            isRotating = true;
             for (let i = 1; i < 90; i += angleJump){
                 render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction, i);
                 await new Promise(resolve => setTimeout(resolve, turnSpeed));
             }
             toRotate = 1;
             direction = 0;
+            isRotating = false;
         } else if (event.key === 'R') {
+            if(dimension === 1) {
+                return;
+            }
+            isRotating = true;
             for (let i = -1; i > -90; i -= angleJump){
                 render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction, i);
                 await new Promise(resolve => setTimeout(resolve, turnSpeed));
             }
             toRotate = 1;
             direction = 1;
+            isRotating = false;
         } else if (event.key === '-') {
+            loc = 0;
             dimension -= 1;
+            if(dimension < 1) {
+                dimension = 1;
+            }
         } else if (event.key === '=') {
+            loc = 0;
             dimension += 1;
         } else if (event.key === 'S') {
             await scramble(instance);
+        } else if (event.key === 'c') {
+            A = 0;
+            B = 0;
+            C = 0;
         }
         render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction, 0);
         toRotate = 0;
