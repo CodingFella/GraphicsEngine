@@ -6,4 +6,4 @@ project(GraphicsEngine C)
 set(CMAKE_C_STANDARD 11)
 
 add_executable(GraphicsEngine
-        main.c)
+        wasm_2x2_cube.c)

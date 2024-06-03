@@ -27,9 +27,11 @@
 #define FLT_MAX 3.402823466e+38F /* max value */
 #define FLT_MIN (-FLT_MAX)       /* min positive value */
 
-int DIMENSION = 2;
+int DIMENSION = 4;
 
 float A, B, C;
+
+int hms = 0;
 static uint32_t pixels[WIDTH * HEIGHT];
 
 struct Point_3D {
@@ -973,6 +975,16 @@ int is_active_plane(uint32_t state, int plane_to_check) {
     return 0;
 }
 
+uint32_t get_color_of_plane(uint32_t state, int plane_to_check) {
+    for (int i = 0; i < 3; i++) {
+        uint32_t plane_id = ((state << (32 - 6 * (i + 1)) >> 29));
+        if (plane_id == plane_to_check) {
+            return ((state << (32 - 6 * (i + 1) + 3)) >> 29);
+        }
+    }
+    return 0;
+}
+
 void reverseArray(struct cube** arr, int start, int end) {
     struct cube *temp;
     while (start < end) {
@@ -1152,7 +1164,7 @@ void rotate_edges(struct cube **select_cubes, Pair *plane_order, int cubes_per_p
 
 }
 
-void rotate_middle(struct cube **select_cubes, int cubes_per_plane, int direction) {
+void rotate_middle(struct cube **select_cubes, int cubes_per_plane, int mode, int direction) {
     int i, j;
     int count = 0;
     int num_cubes = cubes_per_plane - 4 * (DIMENSION - 1);
@@ -1162,6 +1174,10 @@ void rotate_middle(struct cube **select_cubes, int cubes_per_plane, int directio
 
     if (n < 1) {
         return;
+    }
+
+    if(mode == MODE_HEIGHT_K) {
+        direction = !direction;
     }
 
     for (j = 0; j < cubes_per_plane; j++) {
@@ -1204,7 +1220,7 @@ void rotate(struct cube *cubes, int mode, int location, Pair *plane_order, int d
         struct cube *select_cubes[cubes_per_plane];
         load_cube_in_plane(cubes, select_cubes, mode, location);
         rotate_edges(select_cubes, plane_order, cubes_per_plane);
-        rotate_middle(select_cubes, cubes_per_plane, direction);
+        rotate_middle(select_cubes, cubes_per_plane, mode, direction);
         return;
     }
 
@@ -1213,7 +1229,7 @@ void rotate(struct cube *cubes, int mode, int location, Pair *plane_order, int d
         struct cube *select_cubes[cubes_per_plane];
         load_cube_in_plane(cubes, select_cubes, mode, location);
         rotate_edges(select_cubes, plane_order, cubes_per_plane);
-        rotate_middle(select_cubes, cubes_per_plane, direction);
+        rotate_middle(select_cubes, cubes_per_plane, mode, direction);
         return;
     }
     else {
@@ -1299,6 +1315,50 @@ void resetFaces(struct cube *cubes, int num_cubes) {
     }
 }
 
+
+void draw_timer(int hms, int width, int height, int tx, int ty, int font_size, int spacing, uint32_t color) {
+    char time[9];
+    time[8] = '\0';
+
+    int h1 = (hms / 100000) % 10;
+    int h2 = (hms / 10000) % 10;
+    int m1 = (hms / 1000) % 10;
+    int m2 = (hms / 100) % 10;
+    int s1 = (hms / 10) % 10;
+    int s2 = hms % 10;
+
+    // Format the time string as hh:mm:ss
+    time[0] = '0' + h1;
+    time[1] = '0' + h2;
+    time[2] = ':';
+    time[3] = '0' + m1;
+    time[4] = '0' + m2;
+    time[5] = ':';
+    time[6] = '0' + s1;
+    time[7] = '0' + s2;
+
+    draw_text(pixels, width, height, time, tx, ty, font_size, DIGITAL_FONT_WIDTH, DIGITAL_FONT_HEIGHT, spacing, color);
+}
+
+int checkSolved(struct cube *cubes, int num_cubes) {
+    int i, j;
+    for(i = 0; i < NUM_PLANES; i++) {
+        uint32_t curr_color = BG_COLOR;
+        uint32_t temp;
+        for(j = 0; j < num_cubes; j++) {
+            if(is_active_plane(cubes[j].currState, i)) {
+                temp = get_color_of_plane(cubes[j].currState, i);
+                if(curr_color == BG_COLOR) {
+                    curr_color = temp;
+                }
+                if(curr_color != temp) {
+                    return 0;
+                }
+            }
+        }
+    }
+    return 1;
+}
 /*
  *  Function:    render
  *  -------------------
@@ -1315,7 +1375,7 @@ void resetFaces(struct cube *cubes, int num_cubes) {
  *      uint32_t *pixels: a 2D array containing the pixels to be drawn
  *          onto the screen.
  */
-uint32_t *render(int dt, float a, float b, float c, int dimension, int mode, int location, int toRotate, int direction, int angle) {
+uint32_t *render(int dt, float a, float b, float c, int dimension, int mode, int location, int toRotate, int direction, int angle, int add_sec, int reset_time) {
     int refresh = 0;
     if (dimension != DIMENSION) {
         refresh = 1;
@@ -1330,7 +1390,7 @@ uint32_t *render(int dt, float a, float b, float c, int dimension, int mode, int
     }
     if(mode == MODE_HEIGHT_K) {
         angle = -angle;
-        direction = !direction;
+//        direction = !direction;
     }
     if (refresh) {
         resetFaces(cubes, num_cubes);
@@ -1415,6 +1475,36 @@ uint32_t *render(int dt, float a, float b, float c, int dimension, int mode, int
         generateIndicator(cubes, mode, location, camera_distance, camera);
     }
 
+    if(reset_time) {
+        hms = 0;
+    }
+
+    uint32_t hms_color = RED;
+    if(checkSolved(cubes, num_cubes)) {
+        hms = hms;
+        hms_color = GREEN;
+    }
+    else if(add_sec) {
+        hms += 1;
+        if(hms % 100 % 60 == 0) {
+            hms += 100;
+            hms -= 60;
+        }
+        if(hms % 10000 % 6000 == 0) {
+            hms += 10000;
+            hms -= 6000;
+        }
+    }
+
+
+
+    int font_size = 5;
+    int spacing = 1;
+    int margin = 10;
+    int tx = WIDTH-8*(DIGITAL_FONT_WIDTH+spacing)*font_size + spacing*font_size - margin;
+    draw_timer(hms, WIDTH, HEIGHT, tx, margin, font_size, spacing, hms_color);
+
+
     return pixels;
 }
 
@@ -1431,6 +1521,24 @@ int main(void) {
 //    render(1, 0, 0, 0, 4, MODE_LENGTH_I, 0, 1, 0);
 //    render(1, 0, 0, 0, 4, MODE_LENGTH_I, 0, 1, 0);
 //    render(1, 0, 0, 0, 4, MODE_LENGTH_I, 0, 1);
+
+    int num_cubes = (DIMENSION == 1) ? 1 : DIMENSION * DIMENSION * DIMENSION - (DIMENSION - 2) * (DIMENSION - 2) * (DIMENSION - 2);
+    struct cube cubes[num_cubes];
+    struct cube translatedCubes[num_cubes];
+
+
+    float magnitude = SCALE - GAP;
+    float camera_distance = 200;
+
+    struct Point_3D camera = {0, 0, 0};
+
+    uint32_t colors[NUM_PLANES] = {BLUE, YELLOW, RED, GREEN, ORANGE, WHITE};
+
+
+    generateCubes(cubes, translatedCubes, num_cubes, magnitude, camera_distance, 0, 0, 0);
+
+
+    int o = checkSolved(cubes, num_cubes);
 
     return 0;
 }

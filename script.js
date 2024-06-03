@@ -27,7 +27,13 @@ let spinning = false;
 
 let isRotating = false;
 
+let isScrambling = false;
+
+let hms = 0;
+
 let loc = 0;
+
+let currAngle = 0;
 
 const MAX_DIMENSION = 10;
 const MAX_CUBES = (MAX_DIMENSION * MAX_DIMENSION * MAX_DIMENSION - (MAX_DIMENSION-2) * (MAX_DIMENSION-2) * (MAX_DIMENSION-2));
@@ -50,6 +56,7 @@ async function startDemo() {
     const {instance} = await WebAssembly.instantiate(bytes);
     // instance.exports.resetFaces(1);
     render(instance, dt, A, B, C, dimension, mode, loc);
+
 
 
 
@@ -96,34 +103,40 @@ async function startDemo() {
             }
             isRotating = true;
             for (let i = 1; i < 90; i += angleJump){
+                currAngle = i;
                 render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction, i);
                 await new Promise(resolve => setTimeout(resolve, turnSpeed));
             }
+            currAngle = 0;
             toRotate = 1;
             direction = 0;
             isRotating = false;
         } else if (event.key === 'R') {
-            if(dimension === 1) {
+            if (dimension === 1) {
                 return;
             }
             isRotating = true;
-            for (let i = -1; i > -90; i -= angleJump){
+            for (let i = -1; i > -90; i -= angleJump) {
+                currAngle = i;
                 render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction, i);
                 await new Promise(resolve => setTimeout(resolve, turnSpeed));
             }
+            currAngle = 0;
             toRotate = 1;
             direction = 1;
             isRotating = false;
-        } else if (event.key === '-') {
-            loc = 0;
-            dimension -= 1;
-            if(dimension < 1) {
-                dimension = 1;
-            }
-        } else if (event.key === '=') {
-            loc = 0;
-            dimension += 1;
-        } else if (event.key === 'S') {
+        }
+        // } else if (event.key === '-') {
+        //     loc = 0;
+        //     dimension -= 1;
+        //     if(dimension < 1) {
+        //         dimension = 1;
+        //     }
+        // } else if (event.key === '=') {
+        //     loc = 0;
+        //     dimension += 1;
+        //  }
+         else if (event.key === 'S') {
             await scramble(instance);
         } else if (event.key === 'c') {
             A = 0;
@@ -139,16 +152,32 @@ function getRandomInt(max) {
     return Math.floor(Math.random() * max);
 }
 async function scramble(instance) {
-    for(let i=0; i<100; i++) {
+    render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction, currAngle, 0, 1);
+    isScrambling = true;
+    for(let i= 0; i<100; i++) {
         let rand_mode = getRandomInt(3);
         let rand_loc = getRandomInt(dimension);
         render(instance, dt, A, B, C, dimension, rand_mode, rand_loc, 1, direction, 0);
         await new Promise(resolve => setTimeout(resolve, turnSpeed));
     }
+    isScrambling = false;
+    startTimer(instance);
 }
 
-function render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction, angle) {
-    const pixels = instance.exports.render(dt, A, B, C, dimension, mode, loc, toRotate, direction, angle);
+let intervId;
+function startTimer(instance) {
+    render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction, currAngle, 0, 1);
+    if(!intervId) {
+        intervId = setInterval( function() { increase_hms(instance); }, 1000);
+    }
+}
+
+function increase_hms(instance) {
+    if(!isScrambling) render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction, currAngle, 1, 0);
+}
+
+function render(instance, dt, A, B, C, dimension, mode, loc, toRotate, direction, angle, add_sec, reset_time) {
+    const pixels = instance.exports.render(dt, A, B, C, dimension, mode, loc, toRotate, direction, angle, add_sec, reset_time);
     const buffer = instance.exports.memory.buffer;
     const imageData = new ImageData(new Uint8ClampedArray(buffer, pixels, app.width * app.height * 4), app.width);
     ctx.putImageData(imageData, 0, 0);
