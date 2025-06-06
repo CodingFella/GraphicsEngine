@@ -5,8 +5,8 @@
 // clang --target=wasm32 --no-standard-libraries -Wl,--export-all -Wl,--no-entry -o wasm_cube.wasm wasm_cube.c
 // clang --target=wasm32 --no-standard-libraries -Wl,--export-all -Wl,--no-entry -o abcd.wasm wasm_2x2_cube.c
 
-#include "graphi.c"
-#include "math.c"
+#include <graphi.h>
+#include "wasmmath.h"
 
 #define WIDTH 800
 #define HEIGHT 600

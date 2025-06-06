@@ -2,7 +2,7 @@
 // Created by Jacob Lin on 5/4/24.
 //
 
-#include "graphi.c"
+#include "graphi.h"
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -10,11 +10,9 @@
 #define PI 3.14159265359
 #define TERMS 20
 
-
 uint32_t pixels[WIDTH*HEIGHT];
 
 double angle = 0;
-
 
 double sin(double x) //sin calculation
 {
