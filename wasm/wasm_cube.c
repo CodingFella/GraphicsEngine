@@ -5,7 +5,7 @@
 // clang --target=wasm32 --no-standard-libraries -Wl,--export-all -Wl,--no-entry -o wasm_cube.wasm wasm_cube.c
 
 #include "graphi.c"
-#include "math.c"
+#include "wasmmath.c"
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -20,8 +20,6 @@ void *memcpy(void *dest, const void *src, size_t n)
         ((char*)dest)[i] = ((char*)src)[i];
     }
 }
-
-
 
 struct Point_3D {
     float x, y, z;

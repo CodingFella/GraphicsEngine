@@ -6,20 +6,9 @@
 #include <stddef.h>
 //#include <stdio.h>
 
-#define RED 0xFF0000FF
-#define GREEN 0xFF00FF00
-#define BLUE 0xFFFF0000
-#define WHITE 0xFFFFFFFF
-#define BLACK 0xFF000000
-#define TEAL 0xFF008080
-#define LILAC 0xFFE6D7FF
-#define YELLOW 0xFF00FFFF
-#define ORANGE 0xFF00A5FF
-#define HOTPINK 0xFFB469FF
-
+#include "graphi.h"
 
 #define GRAPHIC_SWAP(T, a, b) do { T t = a; a = b; b = t; } while(0)
-
 
 void fill_screen(uint32_t *canvas, size_t width, size_t height, uint32_t color) {
     for (size_t i = 0; i<width*height; ++i) {
@@ -121,7 +110,7 @@ void draw_thick_line(uint32_t *canvas, size_t width, size_t height, int x0, int 
 }
 
 // helper function for draw_circle
-void draw_8_points(uint32_t *canvas, int width, int height, int cx, int cy, int x, int y, uint32_t color) {
+void draw_8_points(uint32_t *canvas, size_t width, size_t height, int cx, int cy, int x, int y, uint32_t color) {
     draw_point(canvas, width, height, cx + x, cy + y, color);
     draw_point(canvas, width, height, cx + x, cy - y, color);
     draw_point(canvas, width, height, cx - x, cy + y, color);
@@ -133,7 +122,7 @@ void draw_8_points(uint32_t *canvas, int width, int height, int cx, int cy, int 
 }
 
 
-void draw_circle(uint32_t *canvas, int width, int height, int cx, int cy, int r, uint32_t color) {
+void draw_circle(uint32_t *canvas, size_t width, size_t height, int cx, int cy, int r, uint32_t color) {
     int error = -r;
     int x = r;
     int y = 0;
@@ -277,12 +266,6 @@ void fill_triangle(uint32_t *canvas, size_t width, size_t height,
     fill_flat_bottom_triangle(canvas, width, height, x1, y1, x2, y2, mid_x, y2, color);
     fill_flat_top_triangle(canvas, width, height, x2, y2, mid_x, y2, x3, y3, color);
 }
-
-
-
-
-#define DEFAULT_FONT_HEIGHT 6
-#define DEFAULT_FONT_WIDTH 6
 
 static char graphic_glyphs[128][DEFAULT_FONT_HEIGHT][DEFAULT_FONT_WIDTH] = {
         ['a'] = {
@@ -554,10 +537,6 @@ static char graphic_glyphs[128][DEFAULT_FONT_HEIGHT][DEFAULT_FONT_WIDTH] = {
         }
 };
 
-#define DIGITAL_FONT_HEIGHT 7
-#define DIGITAL_FONT_WIDTH 5
-
-
 static char digital_glyphs[128][DIGITAL_FONT_HEIGHT][DIGITAL_FONT_WIDTH] = {
         ['1'] = {
                 {0, 1, 1, 0, 0},
@@ -660,8 +639,6 @@ static char digital_glyphs[128][DIGITAL_FONT_HEIGHT][DIGITAL_FONT_WIDTH] = {
         }
 
 };
-
-
 
 void draw_rect(uint32_t *canvas, size_t width, size_t height, int x, int y, int w, int h, uint32_t color) {
     if(x + w >= width || y + h >= height) {
