@@ -53,6 +53,7 @@ pub fn build(b: *std.Build) void {
         // .os_tag = .wasi,
         .os_tag = .freestanding,
     });
+    const wasmoptimize = .ReleaseSmall;
 
     // const trans = b.addTranslateC(.{
     //     .root_source_file = b.path("wasm/wasm_2x2_cube.c"),
@@ -65,16 +66,16 @@ pub fn build(b: *std.Build) void {
     const wexe = b.addExecutable(.{
         // .root_source_file = trans.getOutput(),
         .name = "abcd",
-        .optimize = optimize,
+        .optimize = wasmoptimize,
         .target = wasmtarget,
     });
 
     wexe.addCSourceFile(.{
-        .file = b.path("wasm/wasm_2x2_cube.c"),
+        .file = b.path("examples/wasm/main.c"),
         .flags = &.{
             // "--no-standard-libraries",
-            "-Wl,--export-all",
-            "-Wl,--no-entry",
+            // "-Wl,--export-all",
+            // "-Wl,--no-entry",
             // "--no-entry",
         },
     });
@@ -88,8 +89,18 @@ pub fn build(b: *std.Build) void {
     });
     wexe.addIncludePath(b.path("include"));
 
-    const wasi = b.addInstallArtifact(wexe, .{});
+    const wasi = b.addInstallArtifact(wexe, .{ .dest_dir = .{ .override = .{ .custom = "public" } } });
     wasm.dependOn(&wasi.step);
+
+    const script = b.addInstallFile(b.path("examples/wasm/script.js"), "public/script.js");
+    wasm.dependOn(&script.step);
+    const index = b.addInstallFile(b.path("examples/wasm/index.html"), "public/index.html");
+    wasm.dependOn(&index.step);
+
+    const server = b.addSystemCommand(&.{ "python", "-m", "http.server", "-d", "zig-out/public" }); //"-p", "2348"
+    server.step.dependOn(wasm);
+    const wasmserve = b.step("wasmserve", "public and serve the wasm example");
+    wasmserve.dependOn(&server.step);
 }
 
 const examples = .{.{

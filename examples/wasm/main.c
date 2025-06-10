@@ -1337,7 +1337,7 @@ void draw_timer(int hms, int width, int height, int tx, int ty, int font_size, i
     time[6] = '0' + s1;
     time[7] = '0' + s2;
 
-    draw_text(pixels, width, height, time, tx, ty, font_size, DIGITAL_FONT_WIDTH, DIGITAL_FONT_HEIGHT, spacing, color);
+    graphi_draw_text(pixels, width, height, time, tx, ty, font_size, spacing, color);
 }
 
 int checkSolved(struct cube *cubes, int num_cubes) {
