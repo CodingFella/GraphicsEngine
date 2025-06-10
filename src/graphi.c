@@ -4,7 +4,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-//#include <stdio.h>
+// #include <stdio.h>
 
 #include "graphi.h"
 
@@ -650,26 +650,31 @@ void draw_rect(uint32_t *canvas, size_t width, size_t height, int x, int y, int 
     }
 }
 
-void draw_text(uint32_t *canvas, size_t width, size_t height, const char *text, int tx, int ty, int font_size, int glyph_width, int glyph_height, int spacing, uint32_t color) {
+void graphi_draw_letter(uint32_t *canvas, size_t width, size_t height, char letter, int tx, int ty, int font_size, uint32_t color) {
+    if(letter < 0 || letter >= 128) {
+        return;
+    }
+
+    const char *glyph = &graphic_glyphs[letter][0][0];
+    for(int j=0; j<DEFAULT_FONT_HEIGHT; j++) {
+        for(int k=0; k<DEFAULT_FONT_WIDTH; k++) {
+            if(glyph[j*DEFAULT_FONT_WIDTH + k]) {
+                draw_rect(canvas, width, height, tx + k * font_size, ty + j * font_size, font_size, font_size, color);
+            }
+        }
+    }
+}
+
+void graphi_draw_text(uint32_t *canvas, size_t width, size_t height, const char *text, int tx, int ty, int font_size, int spacing, uint32_t color) {
+    int glyph_width = 5;
+    int glyph_height = 7;
+
     for (size_t i = 0; *text; ++i, ++text) {
         int char_anchor_x = tx + font_size * i * (glyph_width + spacing);
         int temp = char_anchor_x;
         int char_anchor_y = ty;
         const char *glyph = &digital_glyphs[*text][0][0];
 
-
-        for(int j=0; j<glyph_height; j++){
-            for(int k=0; k<glyph_width; k++) {
-//                printf("%d ", glyph[j*glyph_width + k]);
-                if(glyph[j*glyph_width + k]) {
-                    draw_rect(canvas, width, height, char_anchor_x, char_anchor_y, font_size, font_size, color);
-                }
-                char_anchor_x += font_size;
-            }
-            char_anchor_y += font_size;
-            char_anchor_x = temp;
-//            printf("\n");
-        }
-
+        graphi_draw_letter(canvas, width, height, *text, char_anchor_x, char_anchor_y, font_size, color);
     }
 }

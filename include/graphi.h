@@ -28,7 +28,7 @@ void draw_full_circle(uint32_t *canvas, int width, int height, int cx, int cy, i
 void draw_triangle(uint32_t *canvas, size_t width, size_t height, int x1, int y1, int x2, int y2, int x3, int y3, uint32_t color);
 void fill_triangle(uint32_t *canvas, size_t width, size_t height, int x1, int y1, int x2, int y2, int x3, int y3, uint32_t color);
 void draw_rect(uint32_t *canvas, size_t width, size_t height, int x, int y, int w, int h, uint32_t color);
-void draw_text(uint32_t *canvas, size_t width, size_t height, const char *text, int tx, int ty, int font_size, int glyph_width, int glyph_height, int spacing, uint32_t color);
+void graphi_draw_text(uint32_t *canvas, size_t width, size_t height, const char *text, int tx, int ty, int font_size, int spacing, uint32_t color);
 
 #define DEFAULT_FONT_HEIGHT 6
 #define DEFAULT_FONT_WIDTH 6
@@ -40,4 +40,4 @@ void draw_text(uint32_t *canvas, size_t width, size_t height, const char *text, 
 }
 #endif
 
-#endif // GRAPHI_H 
+#endif // GRAPHI_H

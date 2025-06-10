@@ -12,11 +12,15 @@ pub fn build(b: *std.Build) void {
     graphi.addCSourceFile(.{
         .file = b.path("src/graphi.c"),
     });
-    graphi.addIncludePath(b.path("include"));
+    const headerdir = b.path("include");
+    b.addNamedLazyPath("include", headerdir);
 
-    // b.addInstallArtifact(graphi, .{
-    //     // .h_dir = .{ .override = .{ .lib =  } },
-    // });
+    graphi.addIncludePath(headerdir);
+    graphi.root_module.link_libc = true;
+
+    const header = b.addInstallHeaderFile(headerdir.path(b, "graphi.h"), "graphi.h");
+    b.getInstallStep().dependOn(&header.step);
+
     b.installArtifact(graphi);
 
     // ----------------------------------------------------------------------

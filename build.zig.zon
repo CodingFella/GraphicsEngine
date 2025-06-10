@@ -1,7 +1,7 @@
 .{
-    .name = .GraphicsEngine,
-    .version = "0.0.0",
-    .fingerprint = 0x8d603f20ebef7809, // Changing this has security and trust implications.
+    .name = .graphi,
+    .version = "0.1.0",
+    .fingerprint = 0x6900ed8b0b499682, // Changing this has security and trust implications.
 
     .minimum_zig_version = "0.14.0",
     .dependencies = .{},
@@ -10,8 +10,7 @@
         "build.zig",
         "build.zig.zon",
         "src",
-        // For example...
-        //"LICENSE",
-        //"README.md",
+        "include",
+        "README.md",
     },
 }
