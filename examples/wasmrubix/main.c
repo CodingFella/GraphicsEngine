@@ -6,7 +6,8 @@
 // clang --target=wasm32 --no-standard-libraries -Wl,--export-all -Wl,--no-entry -o abcd.wasm wasm_2x2_cube.c
 
 #include <graphi.h>
-#include "wasmmath.h"
+#include <graphi/fonts.h>
+#include <graphi/wasmmath.h>
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -1337,7 +1338,7 @@ void draw_timer(int hms, int width, int height, int tx, int ty, int font_size, i
     time[6] = '0' + s1;
     time[7] = '0' + s2;
 
-    graphi_draw_text(pixels, width, height, time, tx, ty, font_size, spacing, color);
+    draw_text(pixels, width, height, time, tx, ty, font_size, spacing, color);
 }
 
 int checkSolved(struct cube *cubes, int num_cubes) {
@@ -1496,14 +1497,11 @@ uint32_t *render(int dt, float a, float b, float c, int dimension, int mode, int
         }
     }
 
-
-
     int font_size = 5;
     int spacing = 1;
     int margin = 10;
     int tx = WIDTH-8*(DIGITAL_FONT_WIDTH+spacing)*font_size + spacing*font_size - margin;
     draw_timer(hms, WIDTH, HEIGHT, tx, margin, font_size, spacing, hms_color);
-
 
     return pixels;
 }

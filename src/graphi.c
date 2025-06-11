@@ -4,9 +4,9 @@
 
 #include <stdint.h>
 #include <stddef.h>
-// #include <stdio.h>
 
 #include "graphi.h"
+#include "graphi/fonts.h"
 
 #define GRAPHIC_SWAP(T, a, b) do { T t = a; a = b; b = t; } while(0)
 
@@ -16,33 +16,6 @@ void fill_screen(uint32_t *canvas, size_t width, size_t height, uint32_t color) 
     }
 }
 
-//int write_ppm(const uint32_t *canvas, size_t width, size_t height, const char* file_name) {
-//    FILE *f = fopen(file_name, "wb");
-//    // failed
-//    if (f == NULL) {
-//        return -1;
-//    }
-//
-//    fprintf(f, "P6\n%d %d\n255\n", (int) width, (int) height);
-//
-//    for (size_t i = 0; i<width*height; ++i) {
-//        uint32_t current = *(canvas + i);
-//
-//        uint8_t bytes[3] = {
-//                (current>>16)&0xFF,
-//                (current>>8)&0xFF,
-//                (current)&0xFF
-//        };
-//
-//        // printf("Red: %d Green: %d Blue: %d\n", bytes[0], bytes[1], bytes[2]);
-//
-//        fwrite(bytes, sizeof(bytes), 1, f);
-//    }
-//
-//    fclose(f);
-//
-//    return 0;
-//}
 
 void draw_point(uint32_t *canvas, size_t width, size_t height, int x, int y, uint32_t color) {
     if(x< 0 || y < 0 || x >= width || y >= height) {
@@ -97,7 +70,6 @@ void draw_line(uint32_t *canvas, size_t width, size_t height, int x0, int y0, in
     }
 
 }
-
 
 // TODO: AA lines https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm
 
@@ -267,414 +239,73 @@ void fill_triangle(uint32_t *canvas, size_t width, size_t height,
     fill_flat_top_triangle(canvas, width, height, x2, y2, mid_x, y2, x3, y3, color);
 }
 
-static char graphic_glyphs[128][DEFAULT_FONT_HEIGHT][DEFAULT_FONT_WIDTH] = {
-        ['a'] = {
-                {0, 0, 0, 0, 0},
-                {0, 1, 1, 0, 0},
-                {0, 0, 0, 1, 0},
-                {0, 1, 1, 1, 0},
-                {1, 0, 0, 1, 0},
-                {0, 1, 1, 1, 0},
-        },
-        ['b'] = {
-                {1, 0, 0, 0, 0},
-                {1, 1, 1, 0, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {1, 1, 1, 0, 0},
-        },
-        ['c'] = {
-                {0, 0, 0, 0, 0},
-                {0, 1, 1, 0, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 0, 0},
-                {1, 0, 0, 1, 0},
-                {0, 1, 1, 0, 0},
-        },
-        ['d'] = {
-                {0, 0, 0, 1, 0},
-                {0, 1, 1, 1, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {0, 1, 1, 1, 0},
-        },
-        ['e'] = {
-                {0, 0, 0, 0, 0},
-                {0, 1, 1, 0, 0},
-                {1, 0, 0, 1, 0},
-                {1, 1, 1, 1, 0},
-                {1, 0, 0, 0, 0},
-                {0, 1, 1, 1, 0},
-        },
-        ['f'] = {
-                {0, 0, 1, 1, 0},
-                {0, 1, 0, 0, 0},
-                {1, 1, 1, 1, 0},
-                {0, 1, 0, 0, 0},
-                {0, 1, 0, 0, 0},
-                {0, 1, 0, 0, 0},
-        },
-        ['g'] = {0},
-        ['h'] = {
-                {1, 0, 0, 0, 0},
-                {1, 1, 1, 0, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-        },
-        ['i'] = {
-                {0, 0, 1, 0, 0},
-                {0, 0, 0, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 1, 0, 0},
-        },
-        ['j'] = {0},
-        ['k'] = {
-                {0, 1, 0, 0, 0},
-                {0, 1, 0, 0, 0},
-                {0, 1, 0, 1, 0},
-                {0, 1, 1, 0, 0},
-                {0, 1, 1, 0, 0},
-                {0, 1, 0, 1, 0},
-        },
-        ['l'] = {
-                {0, 1, 1, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 1, 1, 1, 0},
-        },
-        ['m'] = {0},
-        ['n'] = {0},
-        ['o'] = {
-                {0, 0, 0, 0, 0},
-                {0, 1, 1, 0, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {0, 1, 1, 0, 0},
-        },
-        ['p'] = {
-                {1, 1, 1, 0, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {1, 1, 1, 0, 0},
-                {1, 0, 0, 0, 0},
-                {1, 0, 0, 0, 0},
-        },
-        ['q'] = {0},
-        ['r'] = {
-                {0, 0, 0, 0, 0},
-                {1, 0, 1, 1, 0},
-                {1, 1, 0, 0, 1},
-                {1, 0, 0, 0, 0},
-                {1, 0, 0, 0, 0},
-                {1, 0, 0, 0, 0},
-        },
-        ['s'] = {0},
-        ['t'] = {0},
-        ['u'] = {0},
-        ['v'] = {0},
-        ['w'] = {
-                {0, 0, 0, 0, 0},
-                {1, 0, 0, 0, 1},
-                {1, 0, 1, 0, 1},
-                {1, 0, 1, 0, 1},
-                {1, 0, 1, 0, 1},
-                {0, 1, 1, 1, 1},
-        },
-        ['x'] = {0},
-        ['y'] = {0},
-        ['z'] = {0},
-
-        ['A'] = {0},
-        ['B'] = {0},
-        ['C'] = {0},
-        ['D'] = {0},
-        ['E'] = {0},
-        ['F'] = {0},
-        ['G'] = {0},
-        ['H'] = {0},
-        ['I'] = {0},
-        ['J'] = {0},
-        ['K'] = {0},
-        ['L'] = {0},
-        ['M'] = {0},
-        ['N'] = {0},
-        ['O'] = {0},
-        ['P'] = {0},
-        ['Q'] = {0},
-        ['R'] = {0},
-        ['S'] = {0},
-        ['T'] = {0},
-        ['U'] = {0},
-        ['V'] = {0},
-        ['W'] = {0},
-        ['X'] = {0},
-        ['Y'] = {0},
-        ['Z'] = {0},
-
-        ['0'] = {
-                {0, 1, 1, 0, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {0, 1, 1, 0, 0},
-        },
-        ['1'] = {
-                {0, 0, 1, 0, 0},
-                {0, 1, 1, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 1, 1, 1, 0},
-        },
-        ['2'] = {
-                {0, 1, 1, 0, 0},
-                {1, 0, 0, 1, 0},
-                {0, 0, 0, 1, 0},
-                {0, 1, 1, 0, 0},
-                {1, 0, 0, 0, 0},
-                {1, 1, 1, 1, 0},
-        },
-        ['3'] = {
-                {0, 1, 1, 0, 0},
-                {1, 0, 0, 1, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {0, 1, 1, 0, 0},
-        },
-        ['4'] = {
-                {0, 0, 1, 1, 0},
-                {0, 1, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {1, 1, 1, 1, 1},
-                {0, 0, 0, 1, 0},
-                {0, 0, 0, 1, 0},
-        },
-        ['5'] = {
-                {1, 1, 1, 0, 0},
-                {1, 0, 0, 0, 0},
-                {1, 1, 1, 0, 0},
-                {0, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {0, 1, 1, 0, 0},
-        },
-        ['6'] = {
-                {0, 1, 1, 0, 0},
-                {1, 0, 0, 0, 0},
-                {1, 1, 1, 0, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {0, 1, 1, 0, 0},
-        },
-        ['7'] = {
-                {1, 1, 1, 1, 0},
-                {0, 0, 0, 1, 0},
-                {0, 0, 1, 0, 0},
-                {0, 1, 0, 0, 0},
-                {0, 1, 0, 0, 0},
-                {0, 1, 0, 0, 0},
-        },
-        ['8'] = {
-                {0, 1, 1, 0, 0},
-                {1, 0, 0, 1, 0},
-                {0, 1, 1, 0, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {0, 1, 1, 0, 0},
-
-        },
-        ['9'] = {
-                {0, 1, 1, 0, 0},
-                {1, 0, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {0, 1, 1, 1, 0},
-                {0, 0, 0, 1, 0},
-                {0, 1, 1, 0, 0},
-        },
-
-        [','] = {
-                {0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0},
-                {0, 0, 0, 1, 0},
-                {0, 0, 1, 0, 0},
-        },
-
-        ['.'] = {
-                {0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0},
-                {0, 0, 1, 0, 0},
-        },
-        ['-'] = {
-                {0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0},
-                {1, 1, 1, 1, 0},
-                {0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0},
-        },
-        [':'] = {
-                {0, 0, 0, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 0, 0, 0},
-        }
-};
-
-static char digital_glyphs[128][DIGITAL_FONT_HEIGHT][DIGITAL_FONT_WIDTH] = {
-        ['1'] = {
-                {0, 1, 1, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 1, 1, 1, 0}
-        },
-        ['2'] = {
-                {0, 1, 1, 1, 0},
-                {1, 0, 0, 0, 1},
-                {0, 0, 0, 1, 0},
-                {0, 0, 1, 0, 0},
-                {0, 1, 0, 0, 0},
-                {1, 0, 0, 0, 0},
-                {1, 1, 1, 1, 1}
-        },
-        ['3'] = {
-                {0, 1, 1, 1, 0},
-                {1, 0, 0, 0, 1},
-                {0, 0, 0, 0, 1},
-                {0, 1, 1, 1, 0},
-                {0, 0, 0, 0, 1},
-                {1, 0, 0, 0, 1},
-                {0, 1, 1, 1, 0}
-        },
-        ['4'] = {
-                {0, 0, 0, 1, 0},
-                {0, 0, 1, 1, 0},
-                {0, 1, 0, 1, 0},
-                {1, 0, 0, 1, 0},
-                {1, 1, 1, 1, 1},
-                {0, 0, 0, 1, 0},
-                {0, 0, 0, 1, 0}
-        },
-        ['5'] = {
-                {1, 1, 1, 1, 1},
-                {1, 0, 0, 0, 0},
-                {1, 0, 0, 0, 0},
-                {0, 1, 1, 1, 0},
-                {0, 0, 0, 0, 1},
-                {0, 0, 0, 0, 1},
-                {1, 1, 1, 1, 0}
-        },
-        ['6'] = {
-                {0, 1, 1, 1, 0},
-                {1, 0, 0, 0, 1},
-                {1, 0, 0, 0, 0},
-                {1, 1, 1, 1, 0},
-                {1, 0, 0, 0, 1},
-                {1, 0, 0, 0, 1},
-                {0, 1, 1, 1, 0}
-        },
-        ['7'] = {
-                {1, 1, 1, 1, 1},
-                {0, 0, 0, 0, 1},
-                {0, 0, 0, 0, 1},
-                {0, 0, 0, 1, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 1, 0, 0}
-        },
-        ['8'] = {
-                {0, 1, 1, 1, 0},
-                {1, 0, 0, 0, 1},
-                {1, 0, 0, 0, 1},
-                {0, 1, 1, 1, 0},
-                {1, 0, 0, 0, 1},
-                {1, 0, 0, 0, 1},
-                {0, 1, 1, 1, 0}
-        },
-        ['9'] = {
-                {0, 1, 1, 1, 0},
-                {1, 0, 0, 0, 1},
-                {1, 0, 0, 0, 1},
-                {0, 1, 1, 1, 0},
-                {0, 0, 0, 0, 1},
-                {1, 0, 0, 0, 1},
-                {0, 1, 1, 1, 0}
-        },
-        ['0'] = {
-                {0, 1, 1, 1, 0},
-                {1, 0, 0, 0, 1},
-                {1, 0, 0, 0, 1},
-                {1, 0, 0, 0, 1},
-                {1, 0, 0, 0, 1},
-                {1, 0, 0, 0, 1},
-                {0, 1, 1, 1, 0}
-        },
-        [':'] = {
-                {0, 0, 0, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0},
-                {0, 0, 0, 0, 0},
-                {0, 0, 1, 0, 0},
-                {0, 0, 0, 0, 0}
-        }
-
-};
-
 void draw_rect(uint32_t *canvas, size_t width, size_t height, int x, int y, int w, int h, uint32_t color) {
     if(x + w >= width || y + h >= height) {
         return;
     }
 
+    // TODO: it may be best to optimize for drawing triangles as they are the
+    // most used but for right now any implementation will need to set each
+    // pixel so its mute. but worth thinking about if I ever do simd things.
     for(int i=x; i<x+w; i++) {
         draw_line(canvas, width, height, i, y, i, y + h - 1, color);
     }
 }
 
-void graphi_draw_letter(uint32_t *canvas, size_t width, size_t height, char letter, int tx, int ty, int font_size, uint32_t color) {
-    if(letter < 0 || letter >= 128) {
-        return;
+
+void draw_text(uint32_t *data, size_t width, size_t height, const char *text, int tx, int ty, int font_size, int spacing, uint32_t color) {
+    graphi_canvas_t canvas = { data, width, height };
+    for (size_t i = 0; *text; ++i, ++text) {
+        int char_anchor_x = tx + font_size * i * (DEFAULT_FONT_WIDTH + spacing);
+        int char_anchor_y = ty;
+
+        graphi_draw_letter(canvas, *text, char_anchor_x, char_anchor_y, font_size, color);
     }
+}
+
+void graphi_draw_letter(graphi_canvas_t canvas, char letter, int tx, int ty, int font_size, uint32_t color) {
+    if (letter < 0 || letter >= 128) return;
 
     const char *glyph = &graphic_glyphs[letter][0][0];
-    for(int j=0; j<DEFAULT_FONT_HEIGHT; j++) {
-        for(int k=0; k<DEFAULT_FONT_WIDTH; k++) {
-            if(glyph[j*DEFAULT_FONT_WIDTH + k]) {
-                draw_rect(canvas, width, height, tx + k * font_size, ty + j * font_size, font_size, font_size, color);
+
+    for (int j = 0; j < DEFAULT_FONT_HEIGHT; j++) {
+        for (int k = 0; k < DEFAULT_FONT_WIDTH; k++) {
+            if (glyph[j * DEFAULT_FONT_WIDTH + k]) {
+                draw_rect(canvas.buffer, canvas.width, canvas.height, tx + k * font_size, ty + j * font_size, font_size, font_size, color);
             }
         }
     }
 }
 
-void graphi_draw_text(uint32_t *canvas, size_t width, size_t height, const char *text, int tx, int ty, int font_size, int spacing, uint32_t color) {
-    int glyph_width = 5;
-    int glyph_height = 7;
+#ifndef GRAPHI_NO_LIBC
 
-    for (size_t i = 0; *text; ++i, ++text) {
-        int char_anchor_x = tx + font_size * i * (glyph_width + spacing);
-        int temp = char_anchor_x;
-        int char_anchor_y = ty;
-        const char *glyph = &digital_glyphs[*text][0][0];
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h> // For memcpy
 
-        graphi_draw_letter(canvas, width, height, *text, char_anchor_x, char_anchor_y, font_size, color);
+size_t graphi_write_ppm(graphi_canvas_t canvas, char **outbuffer) {
+    //    (width * height * 3 bytes for RGB) + // "P6\n4294967295 4294967295\n255\n" is less than 20 chars
+    size_t allocation = (canvas.width * canvas.height * 3) + 20;
+
+    char *buffer = malloc(allocation);
+    if (buffer == NULL) return 0;
+
+    size_t offset = snprintf(buffer, allocation, "P6\n%zu %zu\n255\n", canvas.width, canvas.height);
+
+    // Write pixel data
+    for (size_t i = 0; i < canvas.width * canvas.height; ++i) {
+        uint32_t pixel = *(canvas.buffer + i);
+
+        // Assuming ARGB or 0x00RRGGBB format
+        // Extract Red, Green, Blue components
+        buffer[offset++] = (pixel >> 16) & 0xFF; // Red
+        buffer[offset++] = (pixel >> 8) & 0xFF;  // Green
+        buffer[offset++] = (pixel) & 0xFF;       // Blue
     }
+
+    *outbuffer = buffer;
+    return offset;
 }
+
+#endif
