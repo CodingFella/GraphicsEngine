@@ -2,7 +2,8 @@
 // Created by Jacob Lin on 5/4/24.
 //
 
-#include "graphi.h"
+#include <graphi.h>
+#include <graphi/wasmmath.h>
 
 #define WIDTH 800
 #define HEIGHT 600
@@ -13,47 +14,6 @@
 uint32_t pixels[WIDTH*HEIGHT];
 
 double angle = 0;
-
-double sin(double x) //sin calculation
-{
-    double sum;
-    double fa;
-    double pow;
-    sum = 0.0;
-    for(int i = 0; i <= TERMS; i++)
-    {
-        fa = 1.0;
-        pow = 1.0;
-        for(int j = 1; j <= 2*i+1; j++)
-        {
-            fa *= j;
-            pow *= x;
-        }
-        sum += ((i%2?-1.0:1.0)/fa)*pow;
-    }
-    return sum;
-}
-
-double cos(double x) //cosine calculation
-{
-    double sum;
-    double fa;
-    double pow;
-    sum = 0.0;
-    for(int i = 0; i <= TERMS; i++)
-    {
-        fa = 1.0;
-        pow = 1.0;
-        for(int j = 1; j <= 2*i; j++)
-        {
-            fa *= j;
-            pow *= x;
-        }
-        sum += ((i%2?-1.0:1.0)/fa)*pow;
-    }
-    return sum;
-}
-
 
 void rotate(int *x, int *y)
 {
@@ -68,6 +28,7 @@ uint32_t* render(int dt)
 {
     dt = dt % 360;
     angle = -PI * dt / 180.0;
+
 //    angle += 2 * PI * dt;
 //
 //    int x1 = WIDTH/8, y1 = HEIGHT/8;
@@ -96,10 +57,3 @@ uint32_t* render(int dt)
     return pixels;
 }
 
-
-int main() {
-    for(int i=270; i<360; i++)
-        render(i);
-
-    return 0;
-}

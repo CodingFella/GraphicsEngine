@@ -4,22 +4,14 @@
 
 // clang --target=wasm32 --no-standard-libraries -Wl,--export-all -Wl,--no-entry -o wasm_cube.wasm wasm_cube.c
 
-#include "graphi.c"
-#include "wasmmath.c"
+#include <graphi.h>
+#include <graphi/wasmmath.h>
 
 #define WIDTH 800
 #define HEIGHT 600
 
 #define NUM_PLANES 6
 #define PLANE_POINTS 4
-
-void *memcpy(void *dest, const void *src, size_t n)
-{
-    for (size_t i = 0; i < n; i++)
-    {
-        ((char*)dest)[i] = ((char*)src)[i];
-    }
-}
 
 struct Point_3D {
     float x, y, z;
@@ -53,7 +45,6 @@ void swap(struct plane *xp, struct plane *yp)
     *xp = *yp;
     *yp = temp;
 }
-
 
 void draw_planes(uint32_t *canvas, int width, int height,
                  struct plane p0123, struct plane p5140, struct plane p4062,
@@ -91,13 +82,11 @@ void draw_planes(uint32_t *canvas, int width, int height,
                       (int)(p[i].s_pointB.x+0.5), (int)(p[i].s_pointB.y+0.5),
                       (int)(p[i].s_pointC.x+0.5), (int)(p[i].s_pointC.y+0.5),
                       p[i].color);
-
     }
 }
 
 
 void draw_cube(uint32_t *canvas, int width, int height, struct Point_3D *corners, int num_corners, struct Point_3D camera, uint32_t color) {
-
     struct Point_2D c_2D[num_corners];
     for(size_t i = 0; i < num_corners; ++i) {
         struct Point_3D curr = corners[i];
@@ -157,7 +146,6 @@ void draw_cube(uint32_t *canvas, int width, int height, struct Point_3D *corners
     struct plane p7362 = {corners[7], corners[3], corners[6], corners[2], c_2D[7], c_2D[3], c_2D[6], c_2D[2], WHITE};
 
     draw_planes(canvas, WIDTH, HEIGHT, p0123, p5140, p4062, p5476, p5173, p7362);
-
 }
 
 float A, B, C;
@@ -178,12 +166,13 @@ float calculateZ(float i, float j, float k) {
     return k * cos(A) * cos(B) - j * sin(A) * cos(B) + i * sin(B);
 }
 
-static uint32_t pixels[WIDTH*HEIGHT];
 
 void f_modulo(float* x, float y) {
     *x =  *x - y * (float)(int)(*x/y);
 }
 float angle = 0;
+
+static uint32_t pixels[WIDTH*HEIGHT];
 
 uint32_t* render(int dt, float a, float b, float c) {
     dt = dt % 360;
@@ -222,7 +211,6 @@ uint32_t* render(int dt, float a, float b, float c) {
 
     draw_cube(pixels, WIDTH, HEIGHT, points, 8, camera, RED);
 
-
-
     return pixels;
 }
+

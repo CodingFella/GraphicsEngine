@@ -1,8 +1,9 @@
-
 let app = document.getElementById("app");
 app.width = 800;
 app.height = 600;
+
 let ctx = app.getContext("2d");
+
 let w = null;
 
 let A = 0.0;
